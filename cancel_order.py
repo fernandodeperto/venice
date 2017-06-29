@@ -15,10 +15,9 @@ def main(argv):
 
     order_id = argv[0]
 
-    k = krakenex.API()
-    k.load_key("kraken.key")
+    k = krakenbot.Krakenbot('kraken.key')
 
-    result = krakenbot.cancel_order(k, order_id)
+    result = k.cancel_order(order_id)
 
     print(result['result']['count'])
 

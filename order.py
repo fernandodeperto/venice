@@ -39,10 +39,10 @@ def main(argv):
 
         price, price2 = argv[5:7]
 
-    k = krakenex.API()
-    k.load_key("kraken.key")
+    k = krakenbot.Krakenbot('kraken.key')
 
-    result = krakenbot.add_order(k, pair, direction, order_type, volume, price=price, price2=price2, leverage=leverage)
+    result = k.add_order(pair, direction, order_type, volume, price=price,
+                         price2=price2, leverage=leverage)
 
     if result['error']:
         print("\n".join(result['error']))
