@@ -1,70 +1,82 @@
 import krakenex
 
-def get_ohlc(k, pair, interval, since=None):
-    args = {'pair': pair, 'interval': interval}
+class Krakenbot:
+    def __init__(self, key_file):
+        self.k = krakenex.API()
+        self.k.load_key(key_file)
 
-    if since:
-        args['since'] = since
+    def get_ohlc(self, pair, interval, since=None):
+        args = {'pair': pair, 'interval': interval}
 
-    return k.query_public('OHLC', args)
+        if since:
+            args['since'] = since
 
-def get_ohlc_last(k, pair, interval):
-    result = get_ohlc(k, pair, interval)
+        return self.k.query_public('OHLC', args)
 
-    if result['result']:
-        return result['result']['last']
+    def get_ohlc_last(self, pair, interval):
+        result = self.get_ohlc(pair, interval)
 
-def get_average(k, pair, ma, interval):
-    last = get_ohlc_last(k, pair, interval)
+        if result['result']:
+            return result['result']['last']
 
-    if not last:
-        return
+    def get_average(self, pair, ma, interval):
+        last = self.get_ohlc_last(pair, interval)
 
-    start_time = last - ma * 60 * interval
+        if not last:
+            return
 
-    ohlc = get_ohlc(k, pair, interval, start_time)
+        start_time = last - ma * 60 * interval
+        ohlc = self.get_ohlc(pair, interval, start_time)
 
-    if ohlc['error']:
-        return
+        if ohlc['error']:
+            return
 
-    average = 0
+        average = 0
 
-    for candle in ohlc['result'][pair]:
-        average += float(candle[4])
+        for candle in ohlc['result'][pair]:
+            average += float(candle[4])
 
-    return average/len(ohlc['result'][pair])
+        return average/len(ohlc['result'][pair])
 
-def add_order(k, pair, direction, order_type, volume, price=None, price2=None, leverage=None, flags=None, validate=False):
-    args = {
-        'pair': pair,
-        'type': direction,
-        'ordertype': order_type,
-        'volume': volume
-    }
+    def add_order(self, pair, direction, order_type, volume, price=None, price2=None,
+                  leverage=None, flags=None, validate=False):
+        args = {
+            'pair': pair,
+            'type': direction,
+            'ordertype': order_type,
+            'volume': volume
+        }
 
-    if price:
-        args['price'] = price
+        if price:
+            args['price'] = price
 
-    if price2:
-        args['price2'] = price2
+        if price2:
+            args['price2'] = price2
 
-    if leverage:
-        args['leverage'] = leverage
+        if leverage:
+            args['leverage'] = leverage
 
-    if flags:
-        args['oflags'] = flags
+        if flags:
+            args['oflags'] = flags
 
-    if validate:
-        args['validate'] = True
+        if validate:
+            args['validate'] = True
 
-    order = k.query_private('AddOrder', args)
+        order = self.k.query_private('AddOrder', args)
 
-    return order
+        return order
 
-def query_orders(k, order_ids):
-    orders = k.query_private('QueryOrders', {'txid': order_ids})
-    return orders
+    def query_orders(self, order_ids):
+        orders = self.k.query_private('QueryOrders', {'txid': order_ids})
+        return orders
 
-def cancel_order(k, order_id):
-    result = k.query_private('CancelOrder', {'txid': order_id})
-    return result
+    def cancel_order(self, order_id):
+        result = self.k.query_private('CancelOrder', {'txid': order_id})
+        return result
+
+    def connect(self):
+        self.c = krakenex.Connection()
+        self.k.set_connection(self.c)
+
+    def close(self):
+        self.c.close()

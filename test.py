@@ -8,29 +8,26 @@ import unittest
 
 class TestKrakenbot(unittest.TestCase):
     def setUp(self):
-        self.k = krakenex.API()
-        self.k.load_key("kraken.key")
-
-        self.c = krakenex.Connection()
-        self.k.set_connection(self.c)
+        self.k = krakenbot.Krakenbot('kraken.key')
+        self.k.connect()
 
     def tearDown(self):
-        self.c.close()
+        self.k.close()
 
     def test_get_ohlc(self):
-        result = krakenbot.get_ohlc(self.k, 'XETHZEUR', 15)
+        result = self.k.get_ohlc('XETHZEUR', 15)
         self.assertTrue(result['result'])
 
     def test_get_ohlc_last(self):
-        last = krakenbot.get_ohlc_last(self.k, 'XETHZEUR', 15)
+        last = self.k.get_ohlc_last('XETHZEUR', 15)
         self.assertTrue(last)
 
     def test_get_average(self):
-        average = krakenbot.get_average(self.k, 'XETHZEUR', 5, 15)
+        average = self.k.get_average('XETHZEUR', 5, 15)
         self.assertTrue(average)
 
     def test_add_order(self):
-        order = krakenbot.add_order(self.k, 'XETHZEUR', 'sell', 'limit', '0.01', price=380, validate=True)
+        order = self.k.add_order('XETHZEUR', 'sell', 'limit', '0.01', price=380, validate=True)
         self.assertTrue(order['result'])
 
 if __name__ == "__main__":
