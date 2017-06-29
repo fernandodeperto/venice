@@ -40,12 +40,17 @@ def main(argv):
 
         price, price2 = argv[5:7]
 
-    kraken = krakenex.API()
-    kraken.load_key("kraken.key")
+    k = krakenex.API()
+    k.load_key("kraken.key")
 
-    result = krakenbot.add_order(kraken, pair, direction, order_type, volume, price=price, price2=price2, leverage=leverage)
+    result = krakenbot.add_order(k, pair, direction, order_type, volume, price=price, price2=price2, leverage=leverage)
 
-    pprint.pprint(result)
+    if result['error']:
+        print("\n".join(result['error']))
+
+    elif result['result']:
+        print(result['result']['descr']['order'])
+        print("\n".join(result['result']['txid']))
 
 if __name__ == "__main__":
     main(sys.argv[1:])

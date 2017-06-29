@@ -61,6 +61,10 @@ def add_order(k, pair, direction, order_type, volume, price=None, price2=None, l
 
     return order
 
-def query_orders(k, txids):
-    orders = k.query_private('QueryOrders', {'txid': txids})
+def query_orders(k, order_ids):
+    orders = k.query_private('QueryOrders', {'txid': order_ids})
     return orders
+
+def cancel_order(k, order_id):
+    result = k.query_private('CancelOrder', {'txid': order_id})
+    return result

@@ -15,12 +15,12 @@ def main(argv):
 
     order_id = argv[0]
 
-    kraken = krakenex.API()
-    kraken.load_key("kraken.key")
+    k = krakenex.API()
+    k.load_key("kraken.key")
 
-    result = krakenbot.cancel_order(order_id)
+    result = krakenbot.cancel_order(k, order_id)
 
-    pprint.pprint(result)
+    print(result['result']['count'])
 
 if __name__ == "__main__":
     main(sys.argv[1:])
