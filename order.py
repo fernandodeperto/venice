@@ -6,20 +6,19 @@ import krakenbot
 import pprint
 
 def print_usage():
-    print("usage: ./order.py <pair> <direction> <leverage> market <volume>")
-    print("usage: ./order.py <pair> <direction> <leverage> limit <volume> <price>")
-    print("usage: ./order.py <pair> <direction> <leverage> stop-loss <volume> <price>")
-    print("usage: ./order.py <pair> <direction> <leverage> take-profit <volume> <price>")
-    print("usage: ./order.py <pair> <direction> <leverage> stop-loss-and-limit <volume> <loss_price> <limit_price>")
-    print("usage: ./order.py <pair> <direction> <leverage> stop-loss-and-limit <volume> <loss_price> <limit_price>")
-    print("usage: ./order.py <pair> <direction> <leverage> trailing-stop <volume> <offset>")
+    print("usage: ./order.py <pair> <direction> <leverage> <volume> market ")
+    print("usage: ./order.py <pair> <direction> <leverage> <volume> limit <price>")
+    print("usage: ./order.py <pair> <direction> <leverage> <volume> stop-loss <price>")
+    print("usage: ./order.py <pair> <direction> <leverage> <volume> take-profit <price>")
+    print("usage: ./order.py <pair> <direction> <leverage> <volume> stop-loss-and-limit <stop_price> <limit_price>")
+    print("usage: ./order.py <pair> <direction> <leverage> <volume> trailing-stop <offset>")
 
 def main(argv):
     if len(argv) < 5:
         print_usage()
         sys.exit()
 
-    pair, direction, leverage, order_type, volume = argv[0:5]
+    pair, direction, leverage, volume, order_type = argv[0:5]
 
     if order_type == 'market':
         price = 0
