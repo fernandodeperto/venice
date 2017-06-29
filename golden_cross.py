@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 
-import sys, getopt
-import krakenex
-import pprint
-import statistics
+import sys
 import signal
-import time
+import krakenex
+import krakenbot
+import getopt
+import pprint
 
 def main(argv):
     eth = 0
@@ -53,6 +53,8 @@ def main(argv):
         elif opt in ["r", "--refresh"]:
             refresh_rate = arg
 
+    pending_orders = []
+
     k = krakenex.API()
     k.load_key('kraken.key')
 
@@ -60,95 +62,113 @@ def main(argv):
     #for txid in txids:
     #    print(txid)
 
-    bull = False
+    orders = krakenbot.query_orders(k, 'OYZXVZ-AN6KP-ZMUERC')
+    order_ids = [order_id for order_id in orders.keys()]
+    print(order_ids)
 
-    averages = [get_average(k, 'XETHZEUR', ma1, interval), get_average(k, 'XETHZEUR', ma2, interval)]
-    if average[0] > average[1]:
-        bull = True
+    pprint.pprint(orders)
+    sys.exit()
 
-    while(run):
-        averages = [get_average(k, 'XETHZEUR', ma1, interval), get_average(k, 'XETHZEUR', ma2, interval)]
-        print("averages: %.2f, %.2f" % (averages[0], averages[1]))
-
-        # Sell
-        if bull and average[0] <= average[1]:
-            txids = add_order(k, 'XETHZEUR', 'sell', 'market', volume=eth)
-            if txids:
-                for txid in txids:
-                    print(txid)
-
-                bull = False
-                eth = 0
-                #TODO Get amount used
-
-        # Buy
-        elif not bull and average[0] > average[1]:
-            txids = add_order(k, 'XETHZEUR', 'buy', 'market', volume=eur)
-            if txids:
-                for txid in txids:
-                    print(txid)
-
-                bull = True
-                eur = 0
-                #TODO Get amount used
-
-        time.sleep(refresh_rate)
-
-def get_ohlc(k, pair, interval, since=None):
-    if since:
-        return k.query_public('OHLC', {'pair': pair, 'interval': interval, 'since': since})
-
-    else:
-        return k.query_public('OHLC', {'pair': pair, 'interval': interval})
-
-def get_ohlc_last(k, pair, interval):
-    ohlc = get_ohlc(k, pair, interval, None)
-    return ohlc['result']['last']
-
-def get_average(k, pair, ma, interval):
-    last = get_ohlc_last(k, pair, interval)
-    start_time = last - ma * 60 * interval
-    ohlc = get_ohlc(k, pair, interval, start_time)
-
-    average = 0
-
-    for candle in ohlc['result'][pair]:
-        average += float(candle[4])
-
-    return average/len(ohlc['result'][pair])
-
-def add_order(k, pair, direction, order_type, volume, price=None, price2=None, leverage=None, flags=None, validate=False):
-    args = {
-        'pair': pair,
-        'type': direction,
-        'ordertype': order_type,
-        'volume': volume
-    }
-
-    if price:
-        args['price'] = price
-
-    if price2:
-        args['price2'] = price2
-
-    if leverage:
-        args['leverage'] = leverage
-
-    if flags:
-        args['oflags'] = flags
-
-    if validate:
-        args['validate'] = True
-
-    order = k.query_private('AddOrder', args)
-
-    if order['error']:
-        for error in order['error']:
-            print(error)
-
-    else:
-        print(order['result']['descr']['order'])
-        return order['result']['txid']
+#    bull = False
+#    averages = [get_average(k, 'XETHZEUR', ma1, interval), get_average(k, 'XETHZEUR', ma2, interval)]
+#    if average[0] > average[1]:
+#        bull = True
+#
+#    while(run):
+#
+#        averages = [get_average(k, 'XETHZEUR', ma1, interval), get_average(k, 'XETHZEUR', ma2, interval)]
+#        print("averages: %.2f, %.2f" % (averages[0], averages[1]))
+#
+#        # Sell
+#        if bull and average[0] <= average[1]:
+#            txids = add_order(k, 'XETHZEUR', 'sell', 'market', volume=eth)
+#            if txids:
+#                for txid in txids:
+#                    print(txid)
+#
+#                bull = False
+#                eth = 0
+#                #TODO Get amount used, get vol_exec multiplied by price
+#                #TODO Check how fees are used in conjunction with total cost
+#
+#        # Buy
+#        elif not bull and average[0] > average[1]:
+#            txids = add_order(k, 'XETHZEUR', 'buy', 'market', volume=eur)
+#            if txids:
+#                for txid in txids:
+#                    print(txid)
+#
+#                bull = True
+#                eur = 0
+#                #TODO Get amount used
+#
+#        time.sleep(refresh_rate)
+#
+#def get_ohlc(k, pair, interval, since=None):
+#    if since:
+#        return k.query_public('OHLC', {'pair': pair, 'interval': interval, 'since': since})
+#
+#    else:
+#        return k.query_public('OHLC', {'pair': pair, 'interval': interval})
+#
+#def get_ohlc_last(k, pair, interval):
+#    ohlc = get_ohlc(k, pair, interval, None)
+#    return ohlc['result']['last']
+#
+#def get_average(k, pair, ma, interval):
+#    last = get_ohlc_last(k, pair, interval)
+#    start_time = last - ma * 60 * interval
+#    ohlc = get_ohlc(k, pair, interval, start_time)
+#
+#    average = 0
+#
+#    for candle in ohlc['result'][pair]:
+#        average += float(candle[4])
+#
+#    return average/len(ohlc['result'][pair])
+#
+#def add_order(k, pair, direction, order_type, volume, price=None, price2=None, leverage=None, flags=None, validate=False):
+#    args = {
+#        'pair': pair,
+#        'type': direction,
+#        'ordertype': order_type,
+#        'volume': volume
+#    }
+#
+#    if price:
+#        args['price'] = price
+#
+#    if price2:
+#        args['price2'] = price2
+#
+#    if leverage:
+#        args['leverage'] = leverage
+#
+#    if flags:
+#        args['oflags'] = flags
+#
+#    if validate:
+#        args['validate'] = True
+#
+#    order = k.query_private('AddOrder', args)
+#
+#    if order['error']:
+#        for error in order['error']:
+#            print(error)
+#
+#    else:
+#        print(order['result']['descr']['order'])
+#        return order['result']['txid']
+#
+#def query_orders(k, txids):
+#    orders = k.query_private('QueryOrders', {'txid': txids})
+#
+#    if orders['error']:
+#        for error in order['error']:
+#            print(error)
+#
+#    else:
+#        return orders['result']
 
 if __name__ == "__main__":
     main(sys.argv[1:])
