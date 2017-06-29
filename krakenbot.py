@@ -1,22 +1,31 @@
-#!/usr/bin/python3
-
 import krakenex
 
 def get_ohlc(k, pair, interval, since=None):
-    if since:
-        return k.query_public('OHLC', {'pair': pair, 'interval': interval, 'since': since})
+    args = {'pair': pair, 'interval': interval}
 
-    else:
-        return k.query_public('OHLC', {'pair': pair, 'interval': interval})
+    if since:
+        args['since'] = since
+
+    return k.query_public('OHLC', args)
 
 def get_ohlc_last(k, pair, interval):
-    ohlc = get_ohlc(k, pair, interval, None)
-    return ohlc['result']['last']
+    result = get_ohlc(k, pair, interval)
+
+    if result['result']:
+        return result['result']['last']
 
 def get_average(k, pair, ma, interval):
     last = get_ohlc_last(k, pair, interval)
+
+    if not last:
+        return
+
     start_time = last - ma * 60 * interval
+
     ohlc = get_ohlc(k, pair, interval, start_time)
+
+    if ohlc['error']:
+        return
 
     average = 0
 
@@ -50,20 +59,8 @@ def add_order(k, pair, direction, order_type, volume, price=None, price2=None, l
 
     order = k.query_private('AddOrder', args)
 
-    if order['error']:
-        for error in order['error']:
-            print(error)
-
-    else:
-        print(order['result']['descr']['order'])
-        return order['result']['txid']
+    return order
 
 def query_orders(k, txids):
     orders = k.query_private('QueryOrders', {'txid': txids})
-
-    if orders['error']:
-        for error in order['error']:
-            print(error)
-
-    else:
-        return orders['result']
+    return orders
