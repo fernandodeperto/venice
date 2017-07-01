@@ -16,19 +16,24 @@ class TestKrakenbot(unittest.TestCase):
 
     def test_get_ohlc(self):
         result = self.k.get_ohlc('XETHZEUR', 15)
-        self.assertTrue(result['result'])
 
     def test_get_ohlc_last(self):
         last = self.k.get_ohlc_last('XETHZEUR', 15)
-        self.assertTrue(last)
 
     def test_get_average(self):
         average = self.k.get_average('XETHZEUR', 5, 15)
-        self.assertTrue(average)
 
     def test_add_order(self):
         order = self.k.add_order('XETHZEUR', 'sell', 'limit', '0.01', price=380, validate=True)
-        self.assertTrue(order['result'])
+
+    def test_query_orders(self):
+        result = self.k.query_orders('OQCE6B-JJDBV-3VKBHJ')
+
+    def test_get_ticker(self):
+        result = self.k.get_ticker('XETHZEUR')
+
+    def test_get_price(self):
+        price = self.k.get_price('XETHZEUR')
 
 if __name__ == "__main__":
     unittest.main()
