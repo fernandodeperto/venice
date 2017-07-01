@@ -5,6 +5,7 @@ import krakenex
 import krakenbot
 import pprint
 import unittest
+import http
 
 class TestKrakenbot(unittest.TestCase):
     def setUp(self):

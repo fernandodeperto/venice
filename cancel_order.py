@@ -4,6 +4,7 @@ import sys
 import krakenex
 import krakenbot
 import pprint
+import http
 
 def print_usage():
     print("usage: ./cancel_order.py <order_id>")
@@ -17,9 +18,14 @@ def main(argv):
 
     k = krakenbot.Krakenbot('kraken.key')
 
-    result = k.cancel_order(order_id)
-
-    print(result['result']['count'])
+    try:
+        result = k.cancel_order(order_id)
+    except http.client.HTTPException as e:
+        print("HTTPException: {}:".format(e))
+    except krakenbot.KrakenError as e:
+        print("Krakenerror: {}".format(e))
+    else:
+        print("ok")
 
 if __name__ == "__main__":
     main(sys.argv[1:])
