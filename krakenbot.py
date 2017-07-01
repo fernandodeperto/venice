@@ -265,7 +265,7 @@ class Krakenbot:
             raise KrakenError(args, order['error'])
 
         if not validate:
-            return result['txid']
+            return result['result']['txid']
 
     def query_orders(self, order_ids):
         """
