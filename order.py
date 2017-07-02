@@ -55,7 +55,7 @@ def main(argv):
     except krakenbot.KrakenError as e:
         print("Krakenerror: {}".format(e))
     else:
-        print("\n".join(result))
+        print(result)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

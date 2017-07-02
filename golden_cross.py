@@ -6,16 +6,69 @@ import krakenex
 import krakenbot
 import getopt
 import pprint
+import http
+import logging
+import time
+
+def print_usage():
+    print("usage: ./golden_cross.py <eth> <eur> <ma1> <ma2> <interval>")
 
 def main(argv):
-    eth = 0
-    eur = 0
-    ma1 = 10
-    ma2 = 21
-    interval = 5
-    refresh_rate = 5
-
+    refresh_rate = 10
     run = 1
+    pair = 'XETHZEUR'
+
+    logFormatter = logging.Formatter("%(asctime)s %(name)s %(levelname)s: %(message)s")
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+
+    fileHandler = logging.FileHandler('golden_cross.log')
+    fileHandler.setFormatter(logFormatter)
+    logger.addHandler(fileHandler)
+
+    consoleHandler = logging.StreamHandler()
+    consoleHandler.setFormatter(logFormatter)
+    logger.addHandler(consoleHandler)
+
+    def get_average(ma):
+        average = None
+
+        while run:
+            try:
+                average = k.get_average(pair, ma, interval)
+            except http.client.HTTPException as e:
+                logger.warning("HTTPException: {}".format(e))
+            except krakenbot.KrakenError as e:
+                logger.warning("Krakenerror: {}".format(e))
+            else:
+                return average
+
+    def print_status():
+        logger.info("average1: {:.5f}, average2: {:.5f}, eth: {:.5f}, eur: {:.5f}".format(average1, average2, eth, eur))
+
+    def confirm_orders(txids):
+        nonlocal eth, eur
+
+        try:
+            orders = k.query_orders(", ".join(txids))
+        except http.client.HTTPException as e:
+            logger.warning("HTTPException: {}".format(e))
+        except krakenbot.KrakenError as e:
+            logger.warning("Krakenerror: {}".format(e))
+        else:
+            remaining_orders = []
+
+            for order in orders:
+                if order.status in ['closed', 'canceled']:
+                    if order.direction == 'buy':
+                        eth += order.volume_exec
+                    else:
+                        eur += order.cost - order.fee
+
+                elif order.status in ['pending', 'open']:
+                    remaining_orders.append(order.txid)
+
+            return remaining_orders
 
     def signal_handler(signal, frame):
         nonlocal run
@@ -23,152 +76,60 @@ def main(argv):
 
     signal.signal(signal.SIGINT, signal_handler)
 
-    try:
-        opts, args = getopt.getopt(argv,"hr",["eth=", "eur=", "ma1=", "ma2=", "interval=", "refresh="])
-
-    except getopt.GetoptError:
-        print('golden_cross.py --eth ETH --eur EUR --ma1 MA1 --ma2 MA2 --interval INTERVAL')
+    if len(argv) < 5:
+        print_usage()
         sys.exit(2)
 
-    for opt, arg in opts:
-        if opt == '-h':
-            print('golden_cross.py --eth ETH --eur EUR --ma1 MA1 --ma2 MA2 --interval INTERVAL')
-            sys.exit()
+    eth, eur = [float(x) for x in argv[0:2]]
+    ma1, ma2, interval = [int(x) for x in argv[2:5]]
 
-        elif opt == "--eth":
-            eth = arg
-
-        elif opt == "--eur":
-            eur = arg
-
-        elif opt == "--ma1":
-            ma1 = arg
-
-        elif opt == "--ma2":
-            ma2 = arg
-
-        elif opt == "--interval":
-            interval = arg
-
-        elif opt in ["r", "--refresh"]:
-            refresh_rate = arg
+    k = krakenbot.Krakenbot('kraken.key')
 
     pending_orders = []
 
-    k = krakenex.API()
-    k.load_key('kraken.key')
+    while run:
+        average1, average2 = [get_average(x) for x in [ma1, ma2]]
+        print_status()
 
-    #txids = add_order(k, 'XETHZEUR', 'sell', 'limit', volume=0.01, price = 300)
-    #for txid in txids:
-    #    print(txid)
+        if pending_orders:
+            pending_orders = confirm_orders(pending_orders)
 
-    orders = krakenbot.query_orders(k, 'OYZXVZ-AN6KP-ZMUERC')
-    order_ids = [order_id for order_id in orders.keys()]
-    print(order_ids)
+        # Sell
+        if average1 <= average2 and eth:
+            try:
+                result = k.add_order(pair, 'sell', 'market', eth)
+            except http.client.HTTPException as e:
+                logger.warning("HTTPException: {}".format(e))
+            except krakenbot.KrakenError as e:
+                logger.warning("Krakenerror: {}".format(e))
+            else:
+                logger.info(result)
 
-    pprint.pprint(orders)
-    sys.exit()
+                eth = 0
+                pending_orders += result.txid
 
-#    bull = False
-#    averages = [get_average(k, 'XETHZEUR', ma1, interval), get_average(k, 'XETHZEUR', ma2, interval)]
-#    if average[0] > average[1]:
-#        bull = True
-#
-#    while(run):
-#
-#        averages = [get_average(k, 'XETHZEUR', ma1, interval), get_average(k, 'XETHZEUR', ma2, interval)]
-#        print("averages: %.2f, %.2f" % (averages[0], averages[1]))
-#
-#        # Sell
-#        if bull and average[0] <= average[1]:
-#            txids = add_order(k, 'XETHZEUR', 'sell', 'market', volume=eth)
-#            if txids:
-#                for txid in txids:
-#                    print(txid)
-#
-#                bull = False
-#                eth = 0
-#                #TODO Get amount used, get vol_exec multiplied by price
-#                #TODO Check how fees are used in conjunction with total cost
-#
-#        # Buy
-#        elif not bull and average[0] > average[1]:
-#            txids = add_order(k, 'XETHZEUR', 'buy', 'market', volume=eur)
-#            if txids:
-#                for txid in txids:
-#                    print(txid)
-#
-#                bull = True
-#                eur = 0
-#                #TODO Get amount used
-#
-#        time.sleep(refresh_rate)
-#
-#def get_ohlc(k, pair, interval, since=None):
-#    if since:
-#        return k.query_public('OHLC', {'pair': pair, 'interval': interval, 'since': since})
-#
-#    else:
-#        return k.query_public('OHLC', {'pair': pair, 'interval': interval})
-#
-#def get_ohlc_last(k, pair, interval):
-#    ohlc = get_ohlc(k, pair, interval, None)
-#    return ohlc['result']['last']
-#
-#def get_average(k, pair, ma, interval):
-#    last = get_ohlc_last(k, pair, interval)
-#    start_time = last - ma * 60 * interval
-#    ohlc = get_ohlc(k, pair, interval, start_time)
-#
-#    average = 0
-#
-#    for candle in ohlc['result'][pair]:
-#        average += float(candle[4])
-#
-#    return average/len(ohlc['result'][pair])
-#
-#def add_order(k, pair, direction, order_type, volume, price=None, price2=None, leverage=None, flags=None, validate=False):
-#    args = {
-#        'pair': pair,
-#        'type': direction,
-#        'ordertype': order_type,
-#        'volume': volume
-#    }
-#
-#    if price:
-#        args['price'] = price
-#
-#    if price2:
-#        args['price2'] = price2
-#
-#    if leverage:
-#        args['leverage'] = leverage
-#
-#    if flags:
-#        args['oflags'] = flags
-#
-#    if validate:
-#        args['validate'] = True
-#
-#    order = k.query_private('AddOrder', args)
-#
-#    if order['error']:
-#        for error in order['error']:
-#            print(error)
-#
-#    else:
-#        print(order['result']['descr']['order'])
-#        return order['result']['txid']
-#
-#def query_orders(k, txids):
-#    orders = k.query_private('QueryOrders', {'txid': txids})
-#
-#    if orders['error']:
-#        for error in order['error']:
-#            print(error)
-#
-#    else:
-#        return orders['result']
+        # Buy
+        elif average1 > average2 and eur:
+            try:
+                price = k.get_price(pair)
+            except http.client.HTTPException as e:
+                logger.warning("HTTPException: {}".format(e))
+            except krakenbot.KrakenError as e:
+                logger.warning("Krakenerror: {}".format(e))
+            else:
+                try:
+                    result = k.add_order(pair, 'buy', 'market', eur/price)
+                except http.client.HTTPException as e:
+                    logger.warning("HTTPException: {}".format(e))
+                except krakenbot.KrakenError as e:
+                    logger.warning("Krakenerror: {}".format(e))
+                else:
+                    logger.info(result)
+
+                    eur = 0
+                    pending_orders += result.txid
+
+        time.sleep(refresh_rate)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

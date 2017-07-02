@@ -5,23 +5,32 @@ import pprint
 class KrakenError(Exception):
     pass
 
+class OrderRequest:
+    def __init__(self, txid, descr):
+        self.txid = txid
+        self.descr = descr
+
+    def __repr__(self):
+        return "OrderRequest: txid: {}, {}".format(self.txid,
+                                                   self.descr)
+
 class Order:
     def __init__(self, txid, data):
         self.txid = txid
-        self.cost = data['cost']
+        self.cost = float(data['cost'])
         self.leverage = data['descr']['leverage']
         self.descr = data['descr']['order']
         self.order_type = data['descr']['ordertype']
         self.pair = data['descr']['pair']
-        self.price = data['descr']['price']
-        self.price2 = data['descr']['price2']
+        self.price = float(data['descr']['price'])
+        self.price2 = float(data['descr']['price2'])
         self.direction = data['descr']['type']
-        self.fee = data['fee']
-        self.avg_price = data['price']
+        self.fee = float(data['fee'])
+        self.avg_price = float(data['price'])
         self.close_reason = data['reason']
         self.status = data['status']
-        self.volume = data['vol']
-        self.volume_exec = data['vol_exec']
+        self.volume = float(data['vol'])
+        self.volume_exec = float(data['vol_exec'])
 
     def __repr__(self):
         return "Order: txid: {}, cost: {}, leverage: {}, order_type: {}, price: {}, price2: {}, direction: {}, fee: {}, avg_price: {}, status: {}, volume: {}, volume_exec: {}".format(self.txid,
@@ -238,8 +247,8 @@ class Krakenbot:
 
         Returns
         -------
-        dict
-            Dictionary containing the description and id of the order.
+        :obj:`OrderRequest`
+            `OrderRequest` object containing the request data.
         """
 
         args = {
@@ -264,8 +273,10 @@ class Krakenbot:
         if result['error']:
             raise KrakenError(args, order['error'])
 
-        if not validate:
-            return result['result']['txid']
+        if validate:
+            return OrderRequest(None, result['result']['descr']['order'])
+        else:
+            return OrderRequest(result['result']['txid'], result['result']['descr']['order'])
 
     def query_orders(self, order_ids):
         """
@@ -273,8 +284,8 @@ class Krakenbot:
 
         Parameters
         ----------
-        order_ids : list
-            List of strings containing the order ids to be retrieved.
+        order_ids : str
+            Comma delimited list of ids to be queried.
 
         Returns
         -------
