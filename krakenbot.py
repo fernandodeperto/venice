@@ -75,6 +75,13 @@ class Ticker:
                                                                            self.bid,
                                                                            self.last_price)
 
+class Balance:
+    def __init__(self, pairs):
+        self.pairs = {x:float(pairs[x]) for x in pairs}
+
+    def __repr__(self):
+        return "\n".join(["{}: {:.5f}".format(x, self.pairs[x]) for x in self.pairs])
+
 class Krakenbot:
     def __init__(self, key_file):
         """
@@ -178,14 +185,14 @@ class Krakenbot:
 
         try:
             last = self.get_ohlc_last(pair, interval)
-        except KrakenError:
+        except:
             raise
 
         start_time = last - ma * 60 * interval
 
         try:
             ohlc = self.get_ohlc(pair, interval, start_time)
-        except KrakenError:
+        except:
             raise
 
         average = 0
@@ -369,10 +376,27 @@ class Krakenbot:
 
         try:
             ticker = self.get_ticker(pair)
-        except KrakenError:
+        except:
             raise
 
         return ticker.last_price
+
+    def get_balance(self):
+        """
+        Get account balance.
+
+        Returns
+        -------
+        :obj:`Balance`
+            :obj:`Balance` object
+        """
+
+        try:
+            result = self.k.query_private('Balance')
+        except:
+            raise
+
+        return Balance(result['result'])
 
     def connect(self):
         """
