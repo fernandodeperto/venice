@@ -33,18 +33,11 @@ class Order:
         self.volume_exec = float(data['vol_exec'])
 
     def __repr__(self):
-        return "Order: txid: {}, cost: {}, leverage: {}, order_type: {}, price: {}, price2: {}, direction: {}, fee: {}, avg_price: {}, status: {}, volume: {}, volume_exec: {}".format(self.txid,
-                                                                                                                                                                                       self.cost,
-                                                                                                                                                                                       self.leverage,
-                                                                                                                                                                                       self.order_type,
-                                                                                                                                                                                       self.price,
-                                                                                                                                                                                       self.price2,
-                                                                                                                                                                                       self.direction,
-                                                                                                                                                                                       self.fee,
-                                                                                                                                                                                       self.avg_price,
-                                                                                                                                                                                       self.status,
-                                                                                                                                                                                       self.volume,
-                                                                                                                                                                                       self.volume_exec)
+        return """Order: txid: {}, cost: {}, leverage: {}, order_type: {},
+    price: {}, price2: {}, direction: {}, fee: {}, avg_price: {}, status: {},
+    volume: {}, volume_exec: {}""".format(self.txid, self.cost, self.leverage,
+    self.order_type, self.price, self.price2, self.direction, self.fee,
+    self.avg_price, self.status, self.volume, self.volume_exec)
 
 class OHLC:
     def __init__(self, data):
@@ -53,14 +46,10 @@ class OHLC:
         self.count = data[7]
 
     def __repr__(self):
-        return "OHLC: time: {}, open: {}, high: {}, low: {}, close: {}, vwap: {}, volume: {}, count: {}".format(self.time,
-                                                                                                                self.open,
-                                                                                                                self.high,
-                                                                                                                self.low,
-                                                                                                                self.close,
-                                                                                                                self.vwap,
-                                                                                                                self.volume,
-                                                                                                                self.count)
+        return """OHLC: time: {}, open: {}, high: {}, low: {}, close: {}, vwap:
+            {}, volume: {}, count: {}""".format(self.time, self.open,
+            self.high, self.low, self.close, self.vwap, self.volume,
+            self.count)
 
 class Ticker:
     def __init__(self, pair, data):
@@ -70,10 +59,8 @@ class Ticker:
         self.last_price = float(data['c'][0])
 
     def __repr__(self):
-        return "Ticker: pair: {}, ask: {}, bid: {}, last_price: {}".format(self.pair,
-                                                                           self.ask,
-                                                                           self.bid,
-                                                                           self.last_price)
+        return """Ticker: pair: {}, ask: {}, bid: {}, last_price:
+            {}""".format(self.pair, self.ask, self.bid, self.last_price)
 
 class Balance:
     def __init__(self, pairs):
