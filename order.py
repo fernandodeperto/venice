@@ -4,7 +4,6 @@ import sys
 import krakenex
 import krakenbot
 import pprint
-import http
 
 def print_usage():
     print("usage: ./order.py <pair> <direction> <leverage> <volume> market ")
@@ -50,10 +49,8 @@ def main(argv):
     try:
         result = k.add_order(pair, direction, order_type, volume, price=price,
                              price2=price2, leverage=leverage)
-    except http.client.HTTPException as e:
-        print("HTTPException: {}:".format(e))
-    except krakenbot.KrakenError as e:
-        print("Krakenerror: {}".format(e))
+    except Exception as e:
+        print("Exception: {}:".format(e))
     else:
         print(result)
 

@@ -265,7 +265,7 @@ class Krakenbot:
             raise
 
         if result['error']:
-            raise KrakenError(args, order['error'])
+            raise KrakenError(args, result['error'])
 
         if validate:
             return OrderRequest(None, result['result']['descr']['order'])
