@@ -4,22 +4,22 @@ import sys
 import krakenex
 import krakenbot
 import pprint
-
-def print_usage():
-    print("usage: ./cancel_order.py <order_id>")
+import argparse
 
 def main(argv):
-    if not len(argv):
-        print_usage()
-        sys.exit()
+    parser = argparse.ArgumentParser(description="cancel order")
+    parser.add_argument('order_id', help="order id")
 
-    order_id = argv[0]
+    args = parser.parse_args()
 
     k = krakenbot.Krakenbot('kraken.key')
 
-    result = k.query_orders(order_id)
-
-    pprint.pprint(result)
+    try:
+        result = k.query_orders(args.order_id)
+    except Exception as e:
+        print("Exception: {}".format(e))
+    else:
+        print(result)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

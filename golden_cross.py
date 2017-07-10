@@ -14,9 +14,18 @@ def print_usage():
     print("usage: ./golden_cross.py <eth> <eur> <ma1> <ma2> <interval>")
 
 def main(argv):
-    refresh_rate = 10
     run = 1
-    pair = 'XETHZEUR'
+
+    parser = argparse.ArgumentParser(description="use golden crosses to place orders on Kraken")
+    parser.add_argument('-n', '--dry-run', action='store_true', help="do not place orders, just simulate")
+    parser.add_argument('-v', '--verbose', action='store_true', help="print more messages")
+    parser.add_argument('-p', '--pair', help="asset pair")
+    parser.add_argument('-r', '--refresh-rate', type=int, default=10, help="refresh rate")
+
+    parser.add_argument('vol', type=float, help="volume of the main currency")
+    parser.add_argument('vol2', type=float, help="volume of the quote currency")
+    parser.add_argument('ma1', type=int, help="short moving average")
+    parser.add_argument('ma2', type=int, help="long moving average")
 
     logFormatter = logging.Formatter("%(asctime)s %(name)s %(levelname)s: %(message)s")
     logger = logging.getLogger(__name__)
@@ -36,10 +45,8 @@ def main(argv):
         while run:
             try:
                 average = k.get_average(pair, ma, interval)
-            except http.client.HTTPException as e:
-                logger.warning("HTTPException: {}".format(e))
-            except krakenbot.KrakenError as e:
-                logger.warning("Krakenerror: {}".format(e))
+            except Exception as e:
+                logger.warning("Exception: {}".format(e))
             else:
                 return average
 
@@ -51,10 +58,8 @@ def main(argv):
 
         try:
             orders = k.query_orders(", ".join(txids))
-        except http.client.HTTPException as e:
-            logger.warning("HTTPException: {}".format(e))
-        except krakenbot.KrakenError as e:
-            logger.warning("Krakenerror: {}".format(e))
+        except Exception as e:
+            logger.warning("Exception: {}".format(e))
         else:
             remaining_orders = []
 
@@ -98,10 +103,8 @@ def main(argv):
         if average1 <= average2 and eth:
             try:
                 result = k.add_order(pair, 'sell', 'market', eth)
-            except http.client.HTTPException as e:
-                logger.warning("HTTPException: {}".format(e))
-            except krakenbot.KrakenError as e:
-                logger.warning("Krakenerror: {}".format(e))
+            except Exception as e:
+                logger.warning("Exception: {}".format(e))
             else:
                 logger.info(result)
 
@@ -112,17 +115,13 @@ def main(argv):
         elif average1 > average2 and eur:
             try:
                 price = k.get_price(pair)
-            except http.client.HTTPException as e:
-                logger.warning("HTTPException: {}".format(e))
-            except krakenbot.KrakenError as e:
-                logger.warning("Krakenerror: {}".format(e))
+            except Exception as e:
+                logger.warning("Exception: {}".format(e))
             else:
                 try:
                     result = k.add_order(pair, 'buy', 'market', eur/price)
-                except http.client.HTTPException as e:
-                    logger.warning("HTTPException: {}".format(e))
-                except krakenbot.KrakenError as e:
-                    logger.warning("Krakenerror: {}".format(e))
+                except Exception as e:
+                    logger.warning("Exception: {}".format(e))
                 else:
                     logger.info(result)
 

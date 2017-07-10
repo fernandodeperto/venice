@@ -6,9 +6,6 @@ import krakenbot
 import pprint
 import http
 
-def print_usage():
-    print("usage: ./balance.py")
-
 def main(argv):
     k = krakenbot.Krakenbot('kraken.key')
 

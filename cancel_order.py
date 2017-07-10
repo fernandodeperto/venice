@@ -4,28 +4,20 @@ import sys
 import krakenex
 import krakenbot
 import pprint
-import http
-
-def print_usage():
-    print("usage: ./cancel_order.py <order_id>")
+import argparse
 
 def main(argv):
-    if not len(argv):
-        print_usage()
-        sys.exit()
+    parser = argparse.ArgumentParser(description="cancel order")
+    parser.add_argument('order_id', help="order id")
 
-    order_id = argv[0]
+    args = parser.parse_args()
 
     k = krakenbot.Krakenbot('kraken.key')
 
     try:
-        result = k.cancel_order(order_id)
-    except http.client.HTTPException as e:
-        print("HTTPException: {}:".format(e))
-    except krakenbot.KrakenError as e:
-        print("Krakenerror: {}".format(e))
-    else:
-        print("ok")
+        result = k.cancel_order(args.order_id)
+    except Exception as e:
+        print("Exception: {}".format(e))
 
 if __name__ == "__main__":
     main(sys.argv[1:])
