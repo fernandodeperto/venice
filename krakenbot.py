@@ -27,17 +27,27 @@ class Order:
         self.direction = data['descr']['type']
         self.fee = float(data['fee'])
         self.avg_price = float(data['price'])
-        self.close_reason = data['reason']
         self.status = data['status']
         self.volume = float(data['vol'])
         self.volume_exec = float(data['vol_exec'])
 
+        if self.status in ['closed', 'canceled']:
+            self.reason = data['reason']
+        else:
+            self.reason = None
+
     def __repr__(self):
         return """Order: txid: {}, cost: {}, leverage: {}, order_type: {},
     price: {}, price2: {}, direction: {}, fee: {}, avg_price: {}, status: {},
-    volume: {}, volume_exec: {}""".format(self.txid, self.cost, self.leverage,
-    self.order_type, self.price, self.price2, self.direction, self.fee,
-    self.avg_price, self.status, self.volume, self.volume_exec)
+    reason: {}, volume: {}, volume_exec: {}""".format(self.txid, self.cost,
+                                                      self.leverage,
+                                                      self.order_type,
+                                                      self.price, self.price2,
+                                                      self.direction, self.fee,
+                                                      self.avg_price,
+                                                      self.status, self.reason,
+                                                      self.volume,
+                                                      self.volume_exec)
 
 class OHLC:
     def __init__(self, data):
@@ -48,8 +58,9 @@ class OHLC:
     def __repr__(self):
         return """OHLC: time: {}, open: {}, high: {}, low: {}, close: {}, vwap:
             {}, volume: {}, count: {}""".format(self.time, self.open,
-            self.high, self.low, self.close, self.vwap, self.volume,
-            self.count)
+                                                self.high, self.low,
+                                                self.close, self.vwap,
+                                                self.volume, self.count)
 
 class Ticker:
     def __init__(self, pair, data):
