@@ -14,12 +14,8 @@ def main(argv):
 
     k = krakenbot.Krakenbot('kraken.key')
 
-    try:
-        result = k.query_orders(args.order_id)
-    except Exception as e:
-        print("Exception: {}".format(e))
-    else:
-        print(result)
+    result = k.query_orders(args.order_id)
+    pprint.pprint(result)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

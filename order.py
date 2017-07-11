@@ -48,22 +48,23 @@ def main(argv):
     if args.order_type == 'market':
         price = 0
         price2 = 0
-
     elif args.order_type in ['limit', 'stop-loss', 'take-profit', 'trailing-stop']:
         price = args.price
         price2 = 0
-
     else:
         price = args.price
         price2 = args.price2
 
     try:
-        result = k.add_order(args.pair, args.direction, args.order_type, args.volume, price=price,
+        order_request = k.add_order(args.pair, args.direction, args.order_type, args.volume, price=price,
                              price2=price2, leverage=args.leverage, validate=args.validate)
     except Exception as e:
         print("Exception: {}:".format(e))
     else:
-        print(result)
+        if args.verbose:
+            print(order_request)
+        else:
+            print(order_request.txid)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
