@@ -6,12 +6,12 @@ class KrakenError(Exception):
     pass
 
 class OrderRequest:
-    def __init__(self, txid, descr):
-        self.txid = txid
+    def __init__(self, txids, descr):
+        self.txids = txids
         self.descr = descr
 
     def __repr__(self):
-        return "OrderRequest: txid: {}, {}".format(self.txid,
+        return "OrderRequest: txids: {}, {}".format(", ".join(self.txids),
                                                    self.descr)
 
 class OrderInfo:
@@ -81,7 +81,7 @@ class Order:
             self.reason = None
 
     def __repr__(self):
-        return """Order: txid: {}, {}, cost: {}, fee: {}, avg_price:
+        return """Order: txid: {}, [{}], cost: {}, fee: {}, avg_price:
             {}, status: {}, volume: {}, volume_exec: {}""".format(self.txid,
                                                                   self.info,
                                                                   self.cost,

@@ -10,7 +10,6 @@ def main(argv):
     parser = argparse.ArgumentParser(description="place an order on Kraken")
     parser.add_argument('-q', '--quote', action='store_true', help="convert volume to quote currency")
     parser.add_argument('-n', '--validate', action='store_true', help="do not place order, just validate arguments")
-    parser.add_argument('-v', '--verbose', action='store_true', help="print more messages")
 
     parser.add_argument('pair', help="asset pair")
     parser.add_argument('direction', choices=['buy', 'sell'], help="order direction")
@@ -68,10 +67,7 @@ def main(argv):
     except Exception as e:
         print("Exception: {}:".format(e))
     else:
-        if args.verbose:
-            print(order_request)
-        else:
-            print(order_request.txid)
+        print("{}: {}", ", ".join(order_request.txids), order_request.descr)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

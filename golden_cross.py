@@ -10,9 +10,6 @@ import http
 import logging
 import time
 
-def print_usage():
-    print("usage: ./golden_cross.py <eth> <eur> <ma1> <ma2> <interval>")
-
 def main(argv):
     run = 1
 
@@ -21,6 +18,7 @@ def main(argv):
     parser.add_argument('-v', '--verbose', action='store_true', help="print more messages")
     parser.add_argument('-p', '--pair', help="asset pair")
     parser.add_argument('-r', '--refresh-rate', type=int, default=10, help="refresh rate")
+    parser.add_argument('-e', '--precision', type=int, default=5, help="number of decimal places to use on trades")
 
     parser.add_argument('vol', type=float, help="volume of the main currency")
     parser.add_argument('vol2', type=float, help="volume of the quote currency")
@@ -42,19 +40,18 @@ def main(argv):
     def get_average(ma):
         average = None
 
-        while run:
-            try:
-                average = k.get_average(pair, ma, interval)
-            except Exception as e:
-                logger.warning("Exception: {}".format(e))
-            else:
-                return average
+        try:
+            average = k.get_average(pair, ma, interval)
+        except Exception as e:
+            logger.warning("Exception: {}".format(e))
+        else:
+            return average
 
     def print_status():
         logger.info("average1: {:.5f}, average2: {:.5f}, eth: {:.5f}, eur: {:.5f}".format(average1, average2, eth, eur))
 
     def confirm_orders(txids):
-        nonlocal eth, eur
+        nonlocal vol, vol2
 
         try:
             orders = k.query_orders(", ".join(txids))
@@ -66,9 +63,9 @@ def main(argv):
             for order in orders:
                 if order.status in ['closed', 'canceled']:
                     if order.direction == 'buy':
-                        eth += order.volume_exec
+                        vol += order.volume_exec
                     else:
-                        eur += order.cost - order.fee
+                        vol2 += order.cost - order.fee
 
                 elif order.status in ['pending', 'open']:
                     remaining_orders.append(order.txid)
@@ -81,45 +78,41 @@ def main(argv):
 
     signal.signal(signal.SIGINT, signal_handler)
 
-    if len(argv) < 5:
-        print_usage()
-        sys.exit(2)
-
-    eth, eur = [float(x) for x in argv[0:2]]
-    ma1, ma2, interval = [int(x) for x in argv[2:5]]
+    vol = args.vol
+    vol2 = args.vol2
 
     k = krakenbot.Krakenbot('kraken.key')
 
     pending_orders = []
 
     while run:
-        average1, average2 = [get_average(x) for x in [ma1, ma2]]
+        average1, average2 = [get_average(x) for x in [args.ma1, args.ma2]]
         print_status()
 
         if pending_orders:
             pending_orders = confirm_orders(pending_orders)
 
         # Sell
-        if average1 <= average2 and eth:
+        if average1 <= average2 and vol:
             try:
-                result = k.add_order(pair, 'sell', 'market', eth)
+                result = k.add_order(pair, 'sell', 'market', vol)
             except Exception as e:
                 logger.warning("Exception: {}".format(e))
             else:
                 logger.info(result)
 
-                eth = 0
+                vol = 0
                 pending_orders += result.txid
 
         # Buy
-        elif average1 > average2 and eur:
+        elif average1 > average2 and vol2:
             try:
                 price = k.get_price(pair)
             except Exception as e:
                 logger.warning("Exception: {}".format(e))
             else:
                 try:
-                    result = k.add_order(pair, 'buy', 'market', eur/price)
+                    result = k.add_order(pair, 'buy', 'market', vol2/price)
                 except Exception as e:
                     logger.warning("Exception: {}".format(e))
                 else:
