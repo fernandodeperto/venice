@@ -36,14 +36,21 @@ def main(argv):
     parser_stop_loss_limit.add_argument('price2', type=float, help="limit price")
 
     parser_trailing_stop = subparsers.add_parser('trailing-stop', help="trailing-stop order")
-    parser_trailing_stop.add_argument('price', help="price offset")
+    parser_trailing_stop.add_argument('price', type=float, help="price offset")
 
     args = parser.parse_args()
 
     k = krakenbot.Krakenbot('kraken.key')
 
     if args.quote:
-        volume /= k.get_price(args.pair)
+        if args.order_type == 'market':
+            volume = args.volume / k.get_price(args.pair)
+        elif args.order_type == 'stop-loss-limit':
+            volume = args.volume / args.price2
+        elif args.order_type in ['limit', 'stop-loss', 'take-profit']:
+            volume = args.volume / args.price
+        elif args.order_type == 'trailing-stop':
+            volume = args.volume / (k.get_price(args.pair) + args.price)
 
     if args.order_type == 'market':
         price = 0
@@ -56,7 +63,7 @@ def main(argv):
         price2 = args.price2
 
     try:
-        order_request = k.add_order(args.pair, args.direction, args.order_type, args.volume, price=price,
+        order_request = k.add_order(args.pair, args.direction, args.order_type, volume, price=price,
                              price2=price2, leverage=args.leverage, validate=args.validate)
     except Exception as e:
         print("Exception: {}:".format(e))

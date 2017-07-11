@@ -14,22 +14,66 @@ class OrderRequest:
         return "OrderRequest: txid: {}, {}".format(self.txid,
                                                    self.descr)
 
+class OrderInfo:
+    def __init__(self, descr):
+        """
+        Initialize the OrderInfo class.
+
+        Parameters
+        ----------
+        descr : dict
+            Dictionary containing the following information:
+
+            descr = order description info
+                pair = asset pair
+                type = type of order (buy/sell)
+                ordertype = order type (See Add standard order)
+                price = primary price
+                price2 = secondary price
+                leverage = amount of leverage
+                order = order description
+                close = conditional close order description (if conditional close set)
+        """
+
+        self.description = descr['order']
+        self.order_type = descr['ordertype']
+        self.pair = descr['pair']
+        self.leverage = descr['leverage']
+        self.direction = descr['type']
+        self.price = float(descr['price'])
+        self.price2 = float(descr['price2'])
+
+        if 'close' in descr:
+            self.close = descr['close']
+        else:
+            self.close = None
+
+    def __repr__(self):
+        return """OrderInfo: pair: {}, direction: {}, type: {}, price: {},
+    price2: {}, leverage: {}, description: {}, close: {}""".format(self.pair,
+                                                                   self.direction,
+                                                                   self.order_type,
+                                                                   self.price,
+                                                                   self.price2,
+                                                                   self.leverage,
+                                                                   self.description,
+                                                                   self.close)
+
 class Order:
     def __init__(self, txid, data):
         self.txid = txid
+        self.info = OrderInfo(data['descr'])
         self.cost = float(data['cost'])
-        self.leverage = data['descr']['leverage']
-        self.descr = data['descr']['order']
-        self.order_type = data['descr']['ordertype']
-        self.pair = data['descr']['pair']
-        self.price = float(data['descr']['price'])
-        self.price2 = float(data['descr']['price2'])
-        self.direction = data['descr']['type']
         self.fee = float(data['fee'])
         self.avg_price = float(data['price'])
         self.status = data['status']
         self.volume = float(data['vol'])
         self.volume_exec = float(data['vol_exec'])
+
+        if 'stopprice' in data:
+            self.stop_price = data['stopprice']
+        else:
+            self.stop_price = None
 
         if self.status in ['closed', 'canceled']:
             self.reason = data['reason']
@@ -37,17 +81,15 @@ class Order:
             self.reason = None
 
     def __repr__(self):
-        return """Order: txid: {}, cost: {}, leverage: {}, order_type: {},
-    price: {}, price2: {}, direction: {}, fee: {}, avg_price: {}, status: {},
-    reason: {}, volume: {}, volume_exec: {}""".format(self.txid, self.cost,
-                                                      self.leverage,
-                                                      self.order_type,
-                                                      self.price, self.price2,
-                                                      self.direction, self.fee,
-                                                      self.avg_price,
-                                                      self.status, self.reason,
-                                                      self.volume,
-                                                      self.volume_exec)
+        return """Order: txid: {}, {}, cost: {}, fee: {}, avg_price:
+            {}, status: {}, volume: {}, volume_exec: {}""".format(self.txid,
+                                                                  self.info,
+                                                                  self.cost,
+                                                                  self.fee,
+                                                                  self.avg_price,
+                                                                  self.status,
+                                                                  self.volume,
+                                                                  self.volume_exec)
 
 class OHLC:
     def __init__(self, data):
@@ -218,13 +260,8 @@ class Krakenbot:
             limit (price = limit price)
             stop-loss (price = stop loss price)
             take-profit (price = take profit price)
-            stop-loss-profit (price = stop loss price, price2 = take profit price)
-            stop-loss-profit-limit (price = stop loss price, price2 = take profit price)
-            stop-loss-limit (price = stop loss trigger price, price2 = triggered limit price)
-            take-profit-limit (price = take profit trigger price, price2 = triggered limit price)
-            trailing-stop (price = trailing stop offset)
-            trailing-stop-limit (price = trailing stop offset, price2 = triggered limit offset)
             stop-loss-and-limit (price = stop loss price, price2 = limit price)
+            trailing-stop (price = trailing stop offset)
 
         volume : float
             Number of lots in the quote currency.
