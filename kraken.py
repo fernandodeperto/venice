@@ -9,6 +9,7 @@ import argparse
 import argcomplete
 import logging
 import tabulate
+import datetime
 
 def main(argv):
     parser = argparse.ArgumentParser(description="run commands on the Kraken exchange")
@@ -68,6 +69,16 @@ def main(argv):
     parser_position = parser_cmd.add_parser('position', help="get open positions")
     parser_position.set_defaults(func=position)
     parser_position.add_argument('-p', '--profit', action='store_true', help="include profit data")
+
+    parser_ticker = parser_cmd.add_parser('ticker', help="get ticker information")
+    parser_ticker.set_defaults(func=ticker)
+    parser_ticker.add_argument('pair', help="asset pair")
+
+    parser_ohlc = parser_cmd.add_parser('ohlc', help="get OHLC data")
+    parser_ohlc.set_defaults(func=ohlc)
+    parser_ohlc.add_argument('pair', help="asset pair")
+    parser_ohlc.add_argument('interval', type=int, help="interval in minutes")
+    parser_ohlc.add_argument('num', type=int, help="number of candles")
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
@@ -156,7 +167,8 @@ def balance(args):
     except Exception as e:
         print("Exception: {}".format(e))
     else:
-        print(tabulate.tabulate([[x, result.pairs[x]] for x in result.pairs], headers=['pair', 'balance'], floatfmt='.5f'))
+        print(tabulate.tabulate([[x, result.pairs[x]] for x in result.pairs],
+                                headers=['pair', 'balance'], floatfmt='.5f'))
 
 
 def open(args):
@@ -219,6 +231,41 @@ def position(args):
                                          'profit', 'order_type', 'pair',
                                          'status', 'direction', 'volume',
                                          'volume_closed']))
+
+
+def ticker(args):
+    k = krakenbot.Krakenbot('kraken.key')
+
+    try:
+        ticker = k.get_ticker(args.pair)
+    except Exception as e:
+        print("Exception: {}".format(e))
+    else:
+        print(tabulate.tabulate([[ticker.pair, ticker.ask, ticker.bid, ticker.last_price]],
+                                headers=['pair', 'ask', 'bid', 'last_price'],
+                                floatfmt='.5f'))
+
+def ohlc(args):
+    k = krakenbot.Krakenbot('kraken.key')
+
+    try:
+        time = k.get_time()
+    except Exception as e:
+        print("Exception: {}".format(e))
+    else:
+        since = time - args.interval * 60 * args.num - 1
+
+        try:
+            result = k.get_ohlc(args.pair, args.interval, since)
+        except Exception as e:
+            print("Exception: {}".format(e))
+        else:
+            print(tabulate.tabulate([[datetime.datetime.fromtimestamp(ohlc.time),
+                                      ohlc.open, ohlc.high, ohlc.low,
+                                      ohlc.close, ohlc.volume]
+                                     for ohlc in result],
+                                    headers=['time', 'open', 'high', 'low', 'close', 'volume'],
+                                    floatfmt='.5f'))
 
 
 if __name__ == "__main__":

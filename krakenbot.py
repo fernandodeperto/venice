@@ -75,7 +75,7 @@ class Order:
 
 class OHLC:
     def __init__(self, data):
-        self.time = data[0]
+        self.time = int(data[0])
         self.open, self.high, self.low, self.close, self.vwap, self.volume = [float(x) for x in data[1:7]]
         self.count = data[7]
 
