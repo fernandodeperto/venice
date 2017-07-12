@@ -245,6 +245,7 @@ def ticker(args):
                                 headers=['pair', 'ask', 'bid', 'last_price'],
                                 floatfmt='.5f'))
 
+
 def ohlc(args):
     k = krakenbot.Krakenbot('kraken.key')
 
