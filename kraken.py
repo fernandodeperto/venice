@@ -89,28 +89,7 @@ def main(argv):
 def order(args):
     k = krakenbot.Krakenbot('kraken.key')
 
-    if args.volume == 'all':
-        match = re.match(r'([A-Z]{4})([A-Z]{4})', args.pair)
-
-        if not match:
-            raise Exception('could not parse asset pair')
-
-        try:
-            balance = k.get_balance()
-        except Exception as e:
-            print("Exception: {}".format(e))
-        else:
-            if args.direction == 'buy':
-                try:
-                    price = k.get_price(args.pair)
-                except Exception as e:
-                    print("Exception: {}".format(e))
-                else:
-                    volume = float(balance.pairs[match.group(2)]) / price
-            else:
-                volume = float(balance.pairs[match.group(1)])
-
-    elif '%' in args.volume:
+    if '%' in args.volume:
         pairs = re.match(r'([A-Z]{4})([A-Z]{4})', args.pair)
         percent = re.match(r'([0-9]{1,3})%', args.volume)
 
@@ -128,7 +107,8 @@ def order(args):
                 except Exception as e:
                     print("Exception: {}".format(e))
                 else:
-                    volume = float(balance.pairs[pairs.group(2)]) / price * int(percent.group(1)) / 100
+                    volume = (float(balance.pairs[pairs.group(2)]) / price *
+                              int(percent.group(1)) / 100)
             else:
                 volume = float(balance.pairs[pairs.group(1)])
 
