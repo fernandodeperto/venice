@@ -1,10 +1,12 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
+# PYTHON_ARGCOMPLETE_OK
 
 import sys
 import krakenex
 import krakenbot
 import pprint
 import argparse
+import argcomplete
 import logging
 import tabulate
 
@@ -67,8 +69,10 @@ def main(argv):
     parser_position.set_defaults(func=position)
     parser_position.add_argument('-p', '--profit', action='store_true', help="include profit data")
 
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
     args.func(args)
+
 
 def order(args):
     k = krakenbot.Krakenbot('kraken.key')
@@ -96,8 +100,10 @@ def order(args):
         price2 = args.price2
 
     try:
-        order_request = k.add_order(args.pair, args.direction, args.order_type, volume, price=price,
-                             price2=price2, leverage=args.leverage, validate=args.validate)
+        order_request = k.add_order(args.pair, args.direction, args.order_type,
+                                    volume, price=price, price2=price2,
+                                    leverage=args.leverage,
+                                    validate=args.validate)
     except Exception as e:
         print("Exception: {}:".format(e))
     else:
@@ -105,6 +111,7 @@ def order(args):
             print("{}".format(order_request.descr))
         else:
             print("{}: {}".format(", ".join(order_request.txids), order_request.descr))
+
 
 def query(args):
     k = krakenbot.Krakenbot('kraken.key')
@@ -128,17 +135,18 @@ def query(args):
                                  ['status', result[0].status],
                                  ['reason', result[0].reason],
                                  ['volume', result[0].volume],
-                                 ['volume_exec', result[0].volume_exec],
-                                ],
-                               headers=['key', 'value']))
+                                 ['volume_exec', result[0].volume_exec]],
+                                headers=['key', 'value']))
+
 
 def cancel(args):
     k = krakenbot.Krakenbot('kraken.key')
 
     try:
-        result = k.cancel_order(args.order_id)
+        k.cancel_order(args.order_id)
     except Exception as e:
         print("Exception: {}".format(e))
+
 
 def balance(args):
     k = krakenbot.Krakenbot('kraken.key')
@@ -149,6 +157,7 @@ def balance(args):
         print("Exception: {}".format(e))
     else:
         print(tabulate.tabulate([[x, result.pairs[x]] for x in result.pairs], headers=['pair', 'balance'], floatfmt='.5f'))
+
 
 def open(args):
     k = krakenbot.Krakenbot('kraken.key')
@@ -162,12 +171,11 @@ def open(args):
                                   order.volume_exec, order.info.direction,
                                   order.info.order_type, order.info.pair,
                                   order.info.leverage, order.info.price,
-                                  order.info.price2
-                                 ] for order in result],
+                                  order.info.price2] for order in result],
                                 headers=['txid', 'status', 'vol', 'vol_exec',
                                          'direction', 'order_type', 'pair',
-                                         'leverage', 'price', 'price2'
-                                        ]))
+                                         'leverage', 'price', 'price2']))
+
 
 def closed(args):
     k = krakenbot.Krakenbot('kraken.key')
@@ -186,12 +194,11 @@ def closed(args):
                                       order.volume_exec, order.info.direction,
                                       order.info.order_type, order.info.pair,
                                       order.info.leverage, order.info.price,
-                                      order.info.price2
-                                     ] for order in result],
+                                      order.info.price2] for order in result],
                                     headers=['txid', 'status', 'vol', 'vol_exec',
                                              'direction', 'order_type', 'pair',
-                                             'leverage', 'price', 'price2'
-                                            ]))
+                                             'leverage', 'price', 'price2']))
+
 
 def position(args):
     k = krakenbot.Krakenbot('kraken.key')
@@ -206,12 +213,13 @@ def position(args):
                                   position.profit, position.order_type,
                                   position.pair, position.status,
                                   position.direction, position.volume,
-                                  position.volume_closed ] for position in
-                                 result],
+                                  position.volume_closed]
+                                 for position in result],
                                 headers=['posid', 'cost', 'fee', 'margin',
                                          'profit', 'order_type', 'pair',
                                          'status', 'direction', 'volume',
-                                         'volume_closed' ]))
+                                         'volume_closed']))
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
