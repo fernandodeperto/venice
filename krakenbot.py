@@ -10,9 +10,8 @@ class OrderRequest:
         self.txids = txids
         self.descr = descr
 
-    def __repr__(self):
-        return "OrderRequest: txids: {}, {}".format(", ".join(self.txids),
-                                                   self.descr)
+    def __str__(self):
+        return self.descr
 
 class OrderInfo:
     def __init__(self, descr):
@@ -24,15 +23,14 @@ class OrderInfo:
         descr : dict
             Dictionary containing the following information:
 
-            descr = order description info
-                pair = asset pair
-                type = type of order (buy/sell)
-                ordertype = order type (See Add standard order)
-                price = primary price
-                price2 = secondary price
-                leverage = amount of leverage
-                order = order description
-                close = conditional close order description (if conditional close set)
+            pair = asset pair
+            type = type of order (buy/sell)
+            ordertype = order type (See Add standard order)
+            price = primary price
+            price2 = secondary price
+            leverage = amount of leverage
+            order = order description
+            close = conditional close order description (if conditional close set)
         """
 
         self.description = descr['order']
@@ -48,16 +46,8 @@ class OrderInfo:
         else:
             self.close = None
 
-    def __repr__(self):
-        return """OrderInfo: pair: {}, direction: {}, type: {}, price: {},
-    price2: {}, leverage: {}, description: {}, close: {}""".format(self.pair,
-                                                                   self.direction,
-                                                                   self.order_type,
-                                                                   self.price,
-                                                                   self.price2,
-                                                                   self.leverage,
-                                                                   self.description,
-                                                                   self.close)
+    def __str__(self):
+        return self.description
 
 class Order:
     def __init__(self, txid, data):
@@ -80,16 +70,8 @@ class Order:
         else:
             self.reason = None
 
-    def __repr__(self):
-        return """Order: txid: {}, [{}], cost: {}, fee: {}, avg_price:
-            {}, status: {}, volume: {}, volume_exec: {}""".format(self.txid,
-                                                                  self.info,
-                                                                  self.cost,
-                                                                  self.fee,
-                                                                  self.avg_price,
-                                                                  self.status,
-                                                                  self.volume,
-                                                                  self.volume_exec)
+    def __str__(self):
+        return self.txid
 
 class OHLC:
     def __init__(self, data):
@@ -97,12 +79,10 @@ class OHLC:
         self.open, self.high, self.low, self.close, self.vwap, self.volume = [float(x) for x in data[1:7]]
         self.count = data[7]
 
-    def __repr__(self):
-        return """OHLC: time: {}, open: {}, high: {}, low: {}, close: {}, vwap:
-            {}, volume: {}, count: {}""".format(self.time, self.open,
-                                                self.high, self.low,
-                                                self.close, self.vwap,
-                                                self.volume, self.count)
+    def __str(self):
+        return "{} O:{}, H:{}, L:{}, C:{}, V:{}".format(self.time, self.open,
+                                                        self.high, self.low,
+                                                        self.close,self.volume)
 
 class Ticker:
     def __init__(self, pair, data):
@@ -111,16 +91,63 @@ class Ticker:
         self.bid = float(data['b'][0])
         self.last_price = float(data['c'][0])
 
-    def __repr__(self):
-        return """Ticker: pair: {}, ask: {}, bid: {}, last_price:
-            {}""".format(self.pair, self.ask, self.bid, self.last_price)
-
 class Balance:
     def __init__(self, pairs):
         self.pairs = {x:float(pairs[x]) for x in pairs}
 
-    def __repr__(self):
-        return "\n".join(["{}: {:.5f}".format(x, self.pairs[x]) for x in self.pairs])
+class Position:
+    def __init__(self, posid, position):
+        """
+        Initialize the Position object.
+
+        Parameters
+        ----------
+        posid : str
+            Position ID.
+
+        position : dict
+            Dictionary containing the position data.
+
+        <position_txid> = open position info
+            ordertxid = order responsible for execution of trade
+            pair = asset pair
+            time = unix timestamp of trade
+            type = type of order used to open position (buy/sell)
+            ordertype = order type used to open position
+            cost = opening cost of position (quote currency unless viqc set in oflags)
+            fee = opening fee of position (quote currency)
+            vol = position volume (base currency unless viqc set in oflags)
+            vol_closed = position volume closed (base currency unless viqc set in oflags)
+            margin = initial margin (quote currency)
+            value = current value of remaining position (if docalcs requested.  quote currency)
+            net = unrealized profit/loss of remaining position (if docalcs requested.  quote currency, quote currency scale)
+            misc = comma delimited list of miscellaneous info
+            oflags = comma delimited list of order flags
+                viqc = volume in quote currency
+        """
+
+        self.position_id = posid
+        self.cost = float(position['cost'])
+        self.fee = float(position['fee'])
+        self.margin = float(position['margin'])
+        self.txid = position['ordertxid']
+        self.order_type = position['ordertype']
+        self.pair = position['pair']
+        self.status = position['posstatus']
+        self.rollover = position['rollovertm']
+        self.terms = position['terms']
+        self.time = position['time']
+        self.direction = position['type']
+        self.volume = position['vol']
+        self.volume_closed = position['vol_closed']
+
+        if 'net' in position:
+            self.profit = float(position['net'])
+        else:
+            self.profit = None
+
+    def __str__(self):
+        return self.position_id
 
 class Krakenbot:
     def __init__(self, key_file):
@@ -431,7 +458,104 @@ class Krakenbot:
         except:
             raise
 
+        if result['error']:
+            raise KrakenError(args, result['error'])
+
         return Balance(result['result'])
+
+    def get_open_orders(self):
+        """
+        Get open orders.
+        """
+
+        try:
+            result = self.k.query_private('OpenOrders')
+        except:
+            raise
+
+        if result['error']:
+            raise KrakenError(args, result['error'])
+
+        return [Order(order, result['result']['open'][order]) for order in result['result']['open']]
+
+    def get_closed_orders(self, time):
+        """
+        Get closed orders from a timestamp.
+
+        Parameters
+        ----------
+        time : str
+            UNIX timestamp
+
+        Returns
+        -------
+        list
+            List of :obj:`Order` objects containing the closed orders.
+        """
+
+        try:
+            result = self.k.query_private('ClosedOrders', {'start': time})
+        except:
+            raise
+
+        if result['error']:
+            raise KrakenError(args, result['error'])
+
+        return [Order(order, result['result']['closed'][order]) for order in result['result']['closed']]
+
+    def get_open_positions(self, docalcs=False, txids=None):
+        """
+        Get open positions.
+
+        Parameters
+        ----------
+        docalcs : boolean
+            Ask for profit/loss calculation.
+
+        txids : str
+            Comma delimited string containing the txids to limit the request to.
+
+        Returns
+        -------
+        """
+
+        args = {}
+
+        if docalcs:
+            args['docalcs'] = docalcs
+
+        if txids:
+            args['txid'] = txids
+
+        try:
+            result = self.k.query_private('OpenPositions', args)
+        except:
+            raise
+
+        if result['error']:
+            raise KrakenError(args, result['error'])
+
+        return [Position(position, result['result'][position]) for position in result['result']]
+
+    def get_time(self):
+        """
+        Get the current server time.
+
+        Returns
+        -------
+        int
+            Current UNIX timestamp.
+        """
+
+        try:
+            result = self.k.query_public('Time')
+        except Exception as e:
+            raise
+
+        if result['error']:
+            raise KrakenError(args, result['error'])
+
+        return result['result']['unixtime']
 
     def connect(self):
         """
