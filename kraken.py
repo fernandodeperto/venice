@@ -10,6 +10,7 @@ import argcomplete
 import logging
 import tabulate
 import datetime
+import re
 
 def main(argv):
     parser = argparse.ArgumentParser(description="run commands on the Kraken exchange")
@@ -25,12 +26,12 @@ def main(argv):
     parser_order.add_argument('pair', help="asset pair")
     parser_order.add_argument('direction', choices=['buy', 'sell'], help="order direction")
     parser_order.add_argument('leverage', choices=['none', '2', '3', '4', '5'], help="leverage level")
-    parser_order.add_argument('volume', type=float, help="order volume")
+    parser_order.add_argument('volume', help="order volume")
 
     parser_order_type = parser_order.add_subparsers(dest='order_type', help="order type")
     parser_order_type.required = True
 
-    parser_market = parser_order_type.add_parser('market', help="market order")
+    parser_order_type.add_parser('market', help="market order")
 
     parser_limit = parser_order_type.add_parser('limit', help="limit order")
     parser_limit.add_argument('price', type=float, help="limit price")
@@ -88,7 +89,53 @@ def main(argv):
 def order(args):
     k = krakenbot.Krakenbot('kraken.key')
 
-    if args.quote:
+    if args.volume == 'all':
+        match = re.match(r'([A-Z]{4})([A-Z]{4})', args.pair)
+
+        if not match:
+            raise Exception('could not parse asset pair')
+
+        try:
+            balance = k.get_balance()
+        except Exception as e:
+            print("Exception: {}".format(e))
+        else:
+            if args.direction == 'buy':
+                try:
+                    price = k.get_price(args.pair)
+                except Exception as e:
+                    print("Exception: {}".format(e))
+                else:
+                    volume = float(balance.pairs[match.group(2)]) / price
+            else:
+                volume = float(balance.pairs[match.group(1)])
+
+    elif '%' in args.volume:
+        pairs = re.match(r'([A-Z]{4})([A-Z]{4})', args.pair)
+        percent = re.match(r'([0-9]{1,3})%', args.volume)
+
+        if not pairs:
+            raise Exception('could not parse asset pair')
+
+        try:
+            balance = k.get_balance()
+        except Exception as e:
+            print("Exception: {}".format(e))
+        else:
+            if args.direction == 'buy':
+                try:
+                    price = k.get_price(args.pair)
+                except Exception as e:
+                    print("Exception: {}".format(e))
+                else:
+                    volume = float(balance.pairs[pairs.group(2)]) / price * int(percent.group(1)) / 100
+            else:
+                volume = float(balance.pairs[pairs.group(1)])
+
+        print(volume)
+        sys.exit()
+
+    elif args.quote:
         if args.order_type == 'market':
             volume = args.volume / k.get_price(args.pair)
         elif args.order_type == 'stop-loss-limit':

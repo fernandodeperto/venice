@@ -1,17 +1,19 @@
 import krakenex
-import sys
-import pprint
+
 
 class KrakenError(Exception):
     pass
+
 
 class OrderRequest:
     def __init__(self, txids, descr):
         self.txids = txids
         self.descr = descr
 
-    def __str__(self):
+
+def __str__(self):
         return self.descr
+
 
 class OrderInfo:
     def __init__(self, descr):
@@ -49,6 +51,7 @@ class OrderInfo:
     def __str__(self):
         return self.description
 
+
 class Order:
     def __init__(self, txid, data):
         self.txid = txid
@@ -73,6 +76,7 @@ class Order:
     def __str__(self):
         return self.txid
 
+
 class OHLC:
     def __init__(self, data):
         self.time = int(data[0])
@@ -82,7 +86,8 @@ class OHLC:
     def __str(self):
         return "{} O:{}, H:{}, L:{}, C:{}, V:{}".format(self.time, self.open,
                                                         self.high, self.low,
-                                                        self.close,self.volume)
+                                                        self.close, self.volume)
+
 
 class Ticker:
     def __init__(self, pair, data):
@@ -91,9 +96,11 @@ class Ticker:
         self.bid = float(data['b'][0])
         self.last_price = float(data['c'][0])
 
+
 class Balance:
     def __init__(self, pairs):
-        self.pairs = {x:float(pairs[x]) for x in pairs}
+        self.pairs = {x: float(pairs[x]) for x in pairs}
+
 
 class Position:
     def __init__(self, posid, position):
@@ -148,6 +155,7 @@ class Position:
 
     def __str__(self):
         return self.position_id
+
 
 class Krakenbot:
     def __init__(self, key_file):
@@ -459,7 +467,7 @@ class Krakenbot:
             raise
 
         if result['error']:
-            raise KrakenError(args, result['error'])
+            raise KrakenError(result['error'])
 
         return Balance(result['result'])
 
@@ -474,9 +482,10 @@ class Krakenbot:
             raise
 
         if result['error']:
-            raise KrakenError(args, result['error'])
+            raise KrakenError(result['error'])
 
-        return [Order(order, result['result']['open'][order]) for order in result['result']['open']]
+        return [Order(order, result['result']['open'][order])
+                for order in result['result']['open']]
 
     def get_closed_orders(self, time):
         """
@@ -499,9 +508,10 @@ class Krakenbot:
             raise
 
         if result['error']:
-            raise KrakenError(args, result['error'])
+            raise KrakenError(result['error'])
 
-        return [Order(order, result['result']['closed'][order]) for order in result['result']['closed']]
+        return [Order(order, result['result']['closed'][order])
+                for order in result['result']['closed']]
 
     def get_open_positions(self, docalcs=False, txids=None):
         """
@@ -553,7 +563,7 @@ class Krakenbot:
             raise
 
         if result['error']:
-            raise KrakenError(args, result['error'])
+            raise KrakenError(result['error'])
 
         return result['result']['unixtime']
 
