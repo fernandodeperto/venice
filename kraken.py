@@ -90,36 +90,27 @@ def order(args):
         pairs = re.match(r'([A-Z]{4})([A-Z]{4})', args.pair)
         percent = re.match(r'([0-9]{1,3})%', args.volume)
 
-        if not pairs:
-            raise Exception('could not parse asset pair')
+        balance = k.get_balance()
 
-        try:
-            balance = k.get_balance()
-        except Exception as e:
-            print("Exception: {}".format(e))
+        if args.direction == 'buy':
+            price = k.get_price(args.pair)
+            volume = float(balance.pairs[pairs.group(2)]) / price * int(percent.group(1)) / 100
         else:
-            if args.direction == 'buy':
-                try:
-                    price = k.get_price(args.pair)
-                except Exception as e:
-                    print("Exception: {}".format(e))
-                else:
-                    volume = (float(balance.pairs[pairs.group(2)]) / price *
-                              int(percent.group(1)) / 100)
-            else:
-                volume = float(balance.pairs[pairs.group(1)])
+            volume = float(balance.pairs[pairs.group(1)])
 
     elif args.quote:
+        volume = float(args.volume)
+
         if args.order_type == 'market':
-            volume = args.volume / k.get_price(args.pair)
+            volume /= k.get_price(args.pair)
         elif args.order_type == 'stop-loss-limit':
-            volume = args.volume / args.price2
+            volume /= args.price2
         elif args.order_type in ['limit', 'stop-loss', 'take-profit']:
-            volume = args.volume / args.price
+            volume /= args.price
         elif args.order_type == 'trailing-stop':
-            volume = args.volume / (k.get_price(args.pair) + args.price)
+            volume /= (k.get_price(args.pair) + args.price)
     else:
-        volume = args.volume
+        volume = float(args.volume)
 
     if args.order_type == 'market':
         price = 0
@@ -131,163 +122,127 @@ def order(args):
         price = args.price
         price2 = args.price2
 
-    try:
-        order_request = k.add_order(args.pair, args.direction, args.order_type,
-                                    volume, price=price, price2=price2,
-                                    leverage=args.leverage,
-                                    validate=args.validate)
-    except Exception as e:
-        print("Exception: {}:".format(e))
+    order_request = k.add_order(
+        args.pair, args.direction, args.order_type, volume, price=price,
+        price2=price2, leverage=args.leverage, validate=args.validate)
+
+    if args.validate:
+        print(order_request.descr)
     else:
-        if args.validate:
-            print("{}".format(order_request.descr))
-        else:
-            print("{} : {}".format(", ".join(order_request.txids), order_request.descr))
+        print(order_request.txids, order_request.descr)
 
 
 def query(args):
     k = krakenbot.Krakenbot('kraken.key')
 
-    try:
-        result = k.query_orders(args.order_id)
-    except Exception as e:
-        print("Exception: {}".format(e))
-    else:
-        print(tabulate.tabulate([['txid', result[0].txid],
-                                 ['descr', result[0].info.description],
-                                 ['direction', result[0].info.direction],
-                                 ['order_type', result[0].info.order_type],
-                                 ['price', result[0].info.price],
-                                 ['price2', result[0].info.price2],
-                                 ['leverage', result[0].info.leverage],
-                                 ['cost', result[0].cost],
-                                 ['fee', result[0].fee],
-                                 ['avg_price', result[0].avg_price],
-                                 ['stop_price', result[0].stop_price],
-                                 ['status', result[0].status],
-                                 ['reason', result[0].reason],
-                                 ['volume', result[0].volume],
-                                 ['volume_exec', result[0].volume_exec]],
-                                headers=['key', 'value']))
+    result = k.query_orders(args.order_id)
+
+    print(tabulate.tabulate(
+        [
+            ['txid', result[0].txid],
+            ['descr', result[0].info.description],
+            ['direction', result[0].info.direction],
+            ['order_type', result[0].info.order_type],
+            ['price', result[0].info.price],
+            ['price2', result[0].info.price2],
+            ['leverage', result[0].info.leverage],
+            ['cost', result[0].cost],
+            ['fee', result[0].fee],
+            ['avg_price', result[0].avg_price],
+            ['stop_price', result[0].stop_price],
+            ['status', result[0].status],
+            ['reason', result[0].reason],
+            ['volume', result[0].volume],
+            ['volume_exec', result[0].volume_exec]],
+        headers=['key', 'value']))
 
 
 def cancel(args):
     k = krakenbot.Krakenbot('kraken.key')
-
-    try:
-        k.cancel_order(args.order_id)
-    except Exception as e:
-        print("Exception: {}".format(e))
+    k.cancel_order(args.order_id)
 
 
 def balance(args):
     k = krakenbot.Krakenbot('kraken.key')
 
-    try:
-        result = k.get_balance()
-    except Exception as e:
-        print("Exception: {}".format(e))
-    else:
-        print(tabulate.tabulate([[x, result.pairs[x]] for x in result.pairs],
-                                headers=['pair', 'balance'], floatfmt='.5f'))
+    result = k.get_balance()
+
+    print(tabulate.tabulate(
+        [[x, result.pairs[x]] for x in result.pairs],
+        headers=['pair', 'balance'],
+        floatfmt='.5f'))
 
 
 def open(args):
     k = krakenbot.Krakenbot('kraken.key')
 
-    try:
-        result = k.get_open_orders()
-    except Exception as e:
-        print("Exception: {}".format(e))
-    else:
-        print(tabulate.tabulate([[order.txid, order.status, order.volume,
-                                  order.volume_exec, order.info.direction,
-                                  order.info.order_type, order.info.pair,
-                                  order.info.leverage, order.info.price,
-                                  order.info.price2] for order in result],
-                                headers=['txid', 'status', 'vol', 'vol_exec',
-                                         'direction', 'order_type', 'pair',
-                                         'leverage', 'price', 'price2']))
+    result = k.get_open_orders()
+
+    print(tabulate.tabulate([
+        [order.txid, order.status, order.volume, order.volume_exec,
+         order.info.direction, order.info.order_type, order.info.pair,
+         order.info.leverage, order.info.price, order.info.price2] for order in
+        result],
+        headers=[
+            'txid', 'status', 'vol', 'vol_exec', 'direction', 'order_type',
+            'pair', 'leverage', 'price', 'price2']))
 
 
 def closed(args):
     k = krakenbot.Krakenbot('kraken.key')
 
-    try:
-        time = k.get_time()
-    except Exception as e:
-        print("Exception: {}".format(e))
-    else:
-        try:
-            result = k.get_closed_orders(time - 3600 * args.num - 1)
-        except Exception as e:
-            print("Exception: {}".format(e))
-        else:
-            print(tabulate.tabulate([[order.txid, order.status, order.volume,
-                                      order.volume_exec, order.info.direction,
-                                      order.info.order_type, order.info.pair,
-                                      order.info.leverage, order.info.price,
-                                      order.info.price2] for order in result],
-                                    headers=['txid', 'status', 'vol', 'vol_exec',
-                                             'direction', 'order_type', 'pair',
-                                             'leverage', 'price', 'price2']))
+    time = k.get_time()
+    result = k.get_closed_orders(time - 3600 * args.num - 1)
+
+    print(tabulate.tabulate([
+        [order.txid, order.status, order.volume, order.volume_exec,
+         order.info.direction, order.info.order_type, order.info.pair,
+         order.info.leverage, order.info.price, order.info.price2] for order in
+        result],
+        headers=[
+            'txid', 'status', 'vol', 'vol_exec', 'direction', 'order_type',
+            'pair', 'leverage', 'price', 'price2']))
 
 
 def position(args):
     k = krakenbot.Krakenbot('kraken.key')
 
-    try:
-        result = k.get_open_positions(args.profit)
-    except Exception as e:
-        print("Exception: {}".format(e))
-    else:
-        print(tabulate.tabulate([[position.position_id, position.cost,
-                                  position.fee, position.margin,
-                                  position.profit, position.order_type,
-                                  position.pair, position.status,
-                                  position.direction, position.volume,
-                                  position.volume_closed]
-                                 for position in result],
-                                headers=['posid', 'cost', 'fee', 'margin',
-                                         'profit', 'order_type', 'pair',
-                                         'status', 'direction', 'volume',
-                                         'volume_closed']))
+    result = k.get_open_positions(args.profit)
+
+    print(tabulate.tabulate([
+        [position.position_id, position.cost, position.fee, position.margin,
+         position.profit, position.order_type, position.pair, position.status,
+         position.direction, position.volume, position.volume_closed] for
+        position in result],
+        headers=[
+            'posid', 'cost', 'fee', 'margin', 'profit', 'order_type', 'pair',
+            'status', 'direction', 'volume', 'volume_closed']))
 
 
 def ticker(args):
     k = krakenbot.Krakenbot('kraken.key')
 
-    try:
-        ticker = k.get_ticker(args.pair)
-    except Exception as e:
-        print("Exception: {}".format(e))
-    else:
-        print(tabulate.tabulate([[ticker.pair, ticker.ask, ticker.bid, ticker.last_price]],
-                                headers=['pair', 'ask', 'bid', 'last_price'],
-                                floatfmt='.5f'))
+    ticker = k.get_ticker(args.pair)
+
+    print(tabulate.tabulate([
+        [ticker.pair, ticker.ask, ticker.bid, ticker.last_price]],
+        headers=['pair', 'ask', 'bid', 'last_price'],
+        floatfmt='.5f'))
 
 
 def ohlc(args):
     k = krakenbot.Krakenbot('kraken.key')
 
-    try:
-        time = k.get_time()
-    except Exception as e:
-        print("Exception: {}".format(e))
-    else:
-        since = time - args.interval * 60 * args.num - 1
+    time = k.get_time()
+    since = time - args.interval * 60 * args.num - 1
 
-        try:
-            result = k.get_ohlc(args.pair, args.interval, since)
-        except Exception as e:
-            print("Exception: {}".format(e))
-        else:
-            print(tabulate.tabulate([[datetime.datetime.fromtimestamp(ohlc.time),
-                                      ohlc.open, ohlc.high, ohlc.low,
-                                      ohlc.close, ohlc.volume]
-                                     for ohlc in result],
-                                    headers=['time', 'open', 'high', 'low', 'close', 'volume'],
-                                    floatfmt='.5f'))
+    result = k.get_ohlc(args.pair, args.interval, since)
+
+    print(tabulate.tabulate([
+        [datetime.datetime.fromtimestamp(ohlc.time), ohlc.open, ohlc.high,
+         ohlc.low, ohlc.close, ohlc.volume] for ohlc in result],
+        headers=[
+            'time', 'open', 'high', 'low', 'close', 'volume'], floatfmt='.5f'))
 
 
 if __name__ == "__main__":
