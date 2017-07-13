@@ -2,12 +2,9 @@
 # PYTHON_ARGCOMPLETE_OK
 
 import sys
-import krakenex
 import krakenbot
-import pprint
 import argparse
 import argcomplete
-import logging
 import tabulate
 import datetime
 import re
@@ -112,9 +109,6 @@ def order(args):
             else:
                 volume = float(balance.pairs[pairs.group(1)])
 
-        print(volume)
-        sys.exit()
-
     elif args.quote:
         if args.order_type == 'market':
             volume = args.volume / k.get_price(args.pair)
@@ -148,7 +142,7 @@ def order(args):
         if args.validate:
             print("{}".format(order_request.descr))
         else:
-            print("{}: {}".format(", ".join(order_request.txids), order_request.descr))
+            print("{} : {}".format(", ".join(order_request.txids), order_request.descr))
 
 
 def query(args):
