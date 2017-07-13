@@ -298,6 +298,7 @@ class Krakencli:
             limit (price = limit price)
             stop-loss (price = stop loss price)
             take-profit (price = take profit price)
+            stop-loss-profit (price = stop loss price, price2 = take profit price)
             stop-loss-and-limit (price = stop loss price, price2 = limit price)
             trailing-stop (price = trailing stop offset)
 

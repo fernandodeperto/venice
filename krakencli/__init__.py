@@ -43,6 +43,10 @@ def main():
     parser_take_profit = parser_order_type.add_parser('take-profit', help="take-profit order")
     parser_take_profit.add_argument('price', type=float, help="take profit price")
 
+    parser_stop_loss_profit = parser_order_type.add_parser('stop-loss-profit', help="stop-loss-profit order")
+    parser_stop_loss_profit.add_argument('price', type=float, help="stop loss price")
+    parser_stop_loss_profit.add_argument('price2', type=float, help="profit price")
+
     parser_stop_loss_limit = parser_order_type.add_parser('stop-loss-limit', help="stop-loss-limit order")
     parser_stop_loss_limit.add_argument('price', type=float, help="stop loss price")
     parser_stop_loss_limit.add_argument('price2', type=float, help="limit price")
@@ -134,7 +138,9 @@ def order(args):
     if args.validate:
         print(order_request.descr)
     else:
-        print(order_request.txids, order_request.descr)
+        print(tabulate.tabulate([
+            [txid, order_request.descr] for txid in order_request.txids],
+            headers=['txid', 'descr']))
 
 
 def query(args):
