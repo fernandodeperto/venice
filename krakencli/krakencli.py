@@ -1,7 +1,5 @@
 import krakenex
 
-import pprint
-
 
 DEFAULT_PRECISION = 8
 

@@ -1,6 +1,5 @@
 # PYTHON_ARGCOMPLETE_OK
 
-import sys
 import argparse
 import datetime
 import re
@@ -17,7 +16,6 @@ DEFAULT_PRECISION = 8
 def main():
     parser = argparse.ArgumentParser(description="run commands on the Kraken exchange")
     parser.add_argument('-v', '--verbose', action='store_true', help="print more messages")
-    parser.add_argument('-p', '--precision', type=int, help="default precision")
 
     parser_cmd = parser.add_subparsers(dest='cmd', help="command")
     parser_cmd.required = True
