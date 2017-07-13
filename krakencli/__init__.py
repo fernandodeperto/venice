@@ -1,13 +1,15 @@
 # PYTHON_ARGCOMPLETE_OK
 
-import sys
-import krakencli.krakencli
 import argparse
-import argcomplete
-import tabulate
 import datetime
 import re
 import os.path
+
+import argcomplete
+import tabulate
+
+from krakencli import krakencli
+
 
 def main():
     parser = argparse.ArgumentParser(description="run commands on the Kraken exchange")
@@ -84,7 +86,7 @@ def main():
 
 
 def order(args):
-    k = krakencli.Krakencli("{}/.kraken.key".format(os.path.expanduser('~')))
+    k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
 
     if '%' in args.volume:
         pairs = re.match(r'([A-Z]{4})([A-Z]{4})', args.pair)
@@ -133,7 +135,7 @@ def order(args):
 
 
 def query(args):
-    k = krakencli.Krakencli('kraken.key')
+    k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
 
     result = k.query_orders(args.order_id)
 
@@ -158,13 +160,12 @@ def query(args):
 
 
 def cancel(args):
-    k = krakencli.Krakencli('kraken.key')
+    k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
     k.cancel_order(args.order_id)
 
 
 def balance(args):
-    # k = krakencli.Krakencli("{}/.kraken.key".format(os.path.expanduser('~')))
-    k = krakencli.Krakencli('kraken.key')
+    k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
 
     result = k.get_balance()
 
@@ -175,7 +176,7 @@ def balance(args):
 
 
 def open(args):
-    k = krakencli.Krakencli('kraken.key')
+    k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
 
     result = k.get_open_orders()
 
@@ -190,7 +191,7 @@ def open(args):
 
 
 def closed(args):
-    k = krakencli.Krakencli('kraken.key')
+    k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
 
     time = k.get_time()
     result = k.get_closed_orders(time - 3600 * args.num - 1)
@@ -206,7 +207,7 @@ def closed(args):
 
 
 def position(args):
-    k = krakencli.Krakencli('kraken.key')
+    k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
 
     result = k.get_open_positions(args.profit)
 
@@ -221,7 +222,7 @@ def position(args):
 
 
 def ticker(args):
-    k = krakencli.Krakencli('kraken.key')
+    k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
 
     ticker = k.get_ticker(args.pair)
 
@@ -232,7 +233,7 @@ def ticker(args):
 
 
 def ohlc(args):
-    k = krakencli.Krakencli('kraken.key')
+    k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
 
     time = k.get_time()
     since = time - args.interval * 60 * args.num - 1
@@ -244,7 +245,3 @@ def ohlc(args):
          ohlc.low, ohlc.close, ohlc.volume] for ohlc in result],
         headers=[
             'time', 'open', 'high', 'low', 'close', 'volume'], floatfmt='.5f'))
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])

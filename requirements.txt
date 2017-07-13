@@ -1,0 +1,4 @@
+argcomplete==1.8.2
+krakencli==0.9.3
+krakenex==0.1.4
+tabulate==0.7.7
