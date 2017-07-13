@@ -10,7 +10,7 @@ import tabulate
 
 from krakencli import krakencli
 
-DEFAULT_PRECISION = 8
+DEFAULT_PRECISION = 4
 
 
 def main():
@@ -56,7 +56,7 @@ def main():
 
     parser_query = parser_cmd.add_parser('query', help="query orders")
     parser_query.set_defaults(func=query)
-    parser_query.add_argument('order_id', help="order id")
+    parser_query.add_argument('order_id', nargs='+', help="order id")
 
     parser_cancel = parser_cmd.add_parser('cancel', help="cancel order")
     parser_cancel.set_defaults(func=cancel)
@@ -146,26 +146,15 @@ def order(args):
 def query(args):
     k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
 
-    result = k.query_orders(args.order_id)
+    result = k.query_orders(",".join(args.order_id))
 
     print(tabulate.tabulate(
-        [
-            ['txid', result[0].txid],
-            ['descr', result[0].info.description],
-            ['direction', result[0].info.direction],
-            ['order_type', result[0].info.order_type],
-            ['price', result[0].info.price],
-            ['price2', result[0].info.price2],
-            ['leverage', result[0].info.leverage],
-            ['cost', result[0].cost],
-            ['fee', result[0].fee],
-            ['avg_price', result[0].avg_price],
-            ['stop_price', result[0].stop_price],
-            ['status', result[0].status],
-            ['reason', result[0].reason],
-            ['volume', result[0].volume],
-            ['volume_exec', result[0].volume_exec]],
-        headers=['key', 'value']))
+        [[order.txid, order.info.direction, order.info.order_type,
+          order.info.price, order.info.price2, order.info.leverage, order.cost,
+          order.fee, order.avg_price, order.stop_price] for order in result],
+        headers=['txid', 'direction', 'order_type', 'price', 'price2',
+                 'leverage', 'cost', 'fee', 'avg_price', 'stop_price'],
+        floatfmt='.{}f'.format(3)))
 
 
 def cancel(args):

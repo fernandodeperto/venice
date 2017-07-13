@@ -1,7 +1,7 @@
 import krakenex
 
 
-DEFAULT_PRECISION = 8
+DEFAULT_PRECISION = 5
 
 
 class KrakenError(Exception):
