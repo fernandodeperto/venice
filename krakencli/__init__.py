@@ -1,5 +1,6 @@
 # PYTHON_ARGCOMPLETE_OK
 
+import sys
 import argparse
 import datetime
 import re
@@ -10,10 +11,13 @@ import tabulate
 
 from krakencli import krakencli
 
+DEFAULT_PRECISION = 8
+
 
 def main():
     parser = argparse.ArgumentParser(description="run commands on the Kraken exchange")
     parser.add_argument('-v', '--verbose', action='store_true', help="print more messages")
+    parser.add_argument('-p', '--precision', type=int, help="default precision")
 
     parser_cmd = parser.add_subparsers(dest='cmd', help="command")
     parser_cmd.required = True
@@ -111,6 +115,7 @@ def order(args):
             volume /= args.price
         elif args.order_type == 'trailing-stop':
             volume /= (k.get_price(args.pair) + args.price)
+
     else:
         volume = float(args.volume)
 
@@ -172,7 +177,7 @@ def balance(args):
     print(tabulate.tabulate(
         [[x, result.pairs[x]] for x in result.pairs],
         headers=['pair', 'balance'],
-        floatfmt='.5f'))
+        floatfmt='.{}f'.format(DEFAULT_PRECISION)))
 
 
 def open(args):
@@ -187,7 +192,8 @@ def open(args):
         result],
         headers=[
             'txid', 'status', 'vol', 'vol_exec', 'direction', 'order_type',
-            'pair', 'leverage', 'price', 'price2']))
+            'pair', 'leverage', 'price', 'price2'],
+        floatfmt='.{}f'.format(DEFAULT_PRECISION)))
 
 
 def closed(args):
@@ -203,7 +209,8 @@ def closed(args):
         result],
         headers=[
             'txid', 'status', 'vol', 'vol_exec', 'direction', 'order_type',
-            'pair', 'leverage', 'price', 'price2']))
+            'pair', 'leverage', 'price', 'price2'],
+        floatfmt='.{}f'.format(DEFAULT_PRECISION)))
 
 
 def position(args):
@@ -218,7 +225,8 @@ def position(args):
         position in result],
         headers=[
             'posid', 'cost', 'fee', 'margin', 'profit', 'order_type', 'pair',
-            'status', 'direction', 'volume', 'volume_closed']))
+            'status', 'direction', 'volume', 'volume_closed'],
+        floatfmt='.{}f'.format(DEFAULT_PRECISION)))
 
 
 def ticker(args):
@@ -229,7 +237,7 @@ def ticker(args):
     print(tabulate.tabulate([
         [ticker.pair, ticker.ask, ticker.bid, ticker.last_price]],
         headers=['pair', 'ask', 'bid', 'last_price'],
-        floatfmt='.5f'))
+        floatfmt='.{}f'.format(DEFAULT_PRECISION)))
 
 
 def ohlc(args):
@@ -244,4 +252,5 @@ def ohlc(args):
         [datetime.datetime.fromtimestamp(ohlc.time), ohlc.open, ohlc.high,
          ohlc.low, ohlc.close, ohlc.volume] for ohlc in result],
         headers=[
-            'time', 'open', 'high', 'low', 'close', 'volume'], floatfmt='.5f'))
+            'time', 'open', 'high', 'low', 'close', 'volume'],
+        floatfmt='.{}f'.format(DEFAULT_PRECISION)))

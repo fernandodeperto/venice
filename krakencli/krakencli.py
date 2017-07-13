@@ -1,5 +1,10 @@
 import krakenex
 
+import pprint
+
+
+DEFAULT_PRECISION = 8
+
 
 class KrakenError(Exception):
     pass
@@ -332,15 +337,17 @@ class Krakencli:
             'pair': pair,
             'type': direction,
             'ordertype': order_type,
-            'volume': volume,
-            'price': price,
-            'price2': price2,
+            'volume': '{:.{prec}f}'.format(volume, prec=DEFAULT_PRECISION),
+            'price': '{:.{prec}f}'.format(price, prec=DEFAULT_PRECISION),
+            'price2': '{:.{prec}f}'.format(price2, prec=DEFAULT_PRECISION),
             'leverage': leverage,
             'flags': flags,
         }
 
         if validate:
             args['validate'] = 'yes'
+
+        pprint.pprint(args)
 
         try:
             result = self.k.query_private('AddOrder', args)
