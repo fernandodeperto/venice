@@ -9,6 +9,7 @@ import tabulate
 import datetime
 import re
 
+
 def main(argv):
     parser = argparse.ArgumentParser(description="run commands on the Kraken exchange")
     parser.add_argument('-v', '--verbose', action='store_true', help="print more messages")
