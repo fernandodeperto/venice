@@ -345,8 +345,6 @@ class Krakencli:
         if validate:
             args['validate'] = 'yes'
 
-        pprint.pprint(args)
-
         try:
             result = self.k.query_private('AddOrder', args)
         except:
