@@ -10,7 +10,7 @@ import tabulate
 
 from krakencli import krakencli
 
-DEFAULT_PRECISION = 4
+DEFAULT_PRECISION = 5
 
 
 def main():
