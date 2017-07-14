@@ -63,7 +63,7 @@ def main():
 
     parser_cancel = parser_cmd.add_parser('cancel', help='cancel order')
     parser_cancel.set_defaults(func=cancel)
-    parser_cancel.add_argument('order_id', help='order id')
+    parser_cancel.add_argument('order_id', nargs='+', help='order id')
 
     parser_balance = parser_cmd.add_parser('balance', help='get account balance')
     parser_balance.set_defaults(func=balance)
@@ -167,7 +167,8 @@ def query(args):
 
 def cancel(args):
     k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
-    k.cancel_order(args.order_id)
+    for order in args.order_id:
+        k.cancel_order(order)
 
 
 def balance(args):
