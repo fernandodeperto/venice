@@ -73,7 +73,8 @@ def main():
 
     parser_closed = parser_cmd.add_parser('closed', help='get closed orders')
     parser_closed.set_defaults(func=closed)
-    parser_closed.add_argument('num', type=int, help='number of hours')
+    parser_closed.add_argument('-i', '--ignore', action='store_true', help='ignore canceled orders')
+    parser_closed.add_argument('interval', help='search interval')
 
     parser_position = parser_cmd.add_parser('position', help='get open positions')
     parser_position.set_defaults(func=position)
@@ -200,13 +201,18 @@ def closed(args):
     k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
 
     time = k.get_time()
-    result = k.get_closed_orders(time - 3600 * args.num - 1)
+
+    re_interval = re.match(r'(\d+)([MHDW])', args.interval)
+    intervals = {'M': 60, 'H': 3600, 'D': 86400, 'W': 604800}
+    since = time - int(re_interval.group(1)) * intervals[re_interval.group(2)] - 1
+
+    result = k.get_closed_orders(since)
 
     print(tabulate.tabulate([
         [order.txid, order.status, order.volume, order.volume_exec,
          order.info.direction, order.info.order_type, order.info.pair,
-         order.info.leverage, order.info.price, order.info.price2] for order in
-        result if order.status == 'closed'],
+         order.info.leverage, order.info.price, order.info.price2]
+        for order in result if not args.ignore or order.status == 'closed'],
         headers=[
             'txid', 'status', 'vol', 'vol_exec', 'direction', 'order_type',
             'pair', 'leverage', 'price', 'price2'],
