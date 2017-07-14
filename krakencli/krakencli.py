@@ -2,10 +2,6 @@ import krakenex
 # import pprint
 
 
-DEFAULT_PRECISION = 5
-DEFAULT_VOLUME_PRECISION = 10
-
-
 class KrakenError(Exception):
     pass
 
@@ -89,7 +85,7 @@ class OHLC:
         self.count = data[7]
 
     def __str(self):
-        return "{} O:{}, H:{}, L:{}, C:{}, V:{}".format(self.time, self.open,
+        return '{} O:{}, H:{}, L:{}, C:{}, V:{}'.format(self.time, self.open,
                                                         self.high, self.low,
                                                         self.close, self.volume)
 

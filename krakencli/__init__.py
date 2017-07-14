@@ -13,81 +13,81 @@ import tabulate
 
 from krakencli import krakencli
 
-MAXIMUM_PRECISION = 10
+MAXIMUM_PRECISION = 8
 
 
 def main():
-    parser = argparse.ArgumentParser(description="run commands on the Kraken exchange")
-    parser.add_argument('-v', '--verbose', action='store_true', help="print more messages")
+    parser = argparse.ArgumentParser(description='run commands on the Kraken exchange')
+    parser.add_argument('-v', '--verbose', action='store_true', help='print more messages')
 
-    parser_cmd = parser.add_subparsers(dest='cmd', help="command")
+    parser_cmd = parser.add_subparsers(dest='cmd', help='command')
     parser_cmd.required = True
 
-    parser_order = parser_cmd.add_parser('order', help="place order")
+    parser_order = parser_cmd.add_parser('order', help='place order')
     parser_order.set_defaults(func=order)
-    parser_order.add_argument('-q', '--quote', action='store_true', help="convert volume to quote currency")
-    parser_order.add_argument('-n', '--validate', action='store_true', help="do not place order, just validate arguments")
-    parser_order.add_argument('pair', help="asset pair")
-    parser_order.add_argument('direction', choices=['buy', 'sell'], help="order direction")
-    parser_order.add_argument('leverage', choices=['none', '2', '3', '4', '5'], help="leverage level")
-    parser_order.add_argument('volume', help="order volume")
+    parser_order.add_argument('-q', '--quote', action='store_true', help='convert volume to quote currency')
+    parser_order.add_argument('-n', '--validate', action='store_true', help='do not place order, just validate arguments')
+    parser_order.add_argument('pair', help='asset pair')
+    parser_order.add_argument('direction', choices=['buy', 'sell'], help='order direction')
+    parser_order.add_argument('leverage', choices=['none', '2', '3', '4', '5'], help='leverage level')
+    parser_order.add_argument('volume', help='order volume')
 
-    parser_order_type = parser_order.add_subparsers(dest='order_type', help="order type")
+    parser_order_type = parser_order.add_subparsers(dest='order_type', help='order type')
     parser_order_type.required = True
 
-    parser_order_type.add_parser('market', help="market order")
+    parser_order_type.add_parser('market', help='market order')
 
-    parser_limit = parser_order_type.add_parser('limit', help="limit order")
-    parser_limit.add_argument('price', help="limit price")
+    parser_limit = parser_order_type.add_parser('limit', help='limit order')
+    parser_limit.add_argument('price', help='limit price')
 
-    parser_stop_loss = parser_order_type.add_parser('stop-loss', help="stop-loss order")
-    parser_stop_loss.add_argument('price', help="stop loss price")
+    parser_stop_loss = parser_order_type.add_parser('stop-loss', help='stop-loss order')
+    parser_stop_loss.add_argument('price', help='stop loss price')
 
-    parser_take_profit = parser_order_type.add_parser('take-profit', help="take-profit order")
-    parser_take_profit.add_argument('price', help="take profit price")
+    parser_take_profit = parser_order_type.add_parser('take-profit', help='take-profit order')
+    parser_take_profit.add_argument('price', help='take profit price')
 
-    parser_stop_loss_profit = parser_order_type.add_parser('stop-loss-profit', help="stop-loss-profit order")
-    parser_stop_loss_profit.add_argument('price', help="stop loss price")
-    parser_stop_loss_profit.add_argument('price2', help="profit price")
+    parser_stop_loss_profit = parser_order_type.add_parser('stop-loss-profit', help='stop-loss-profit order')
+    parser_stop_loss_profit.add_argument('price', help='stop loss price')
+    parser_stop_loss_profit.add_argument('price2', help='profit price')
 
-    parser_stop_loss_limit = parser_order_type.add_parser('stop-loss-limit', help="stop-loss-limit order")
-    parser_stop_loss_limit.add_argument('price', help="stop loss price")
-    parser_stop_loss_limit.add_argument('price2', help="limit price")
+    parser_stop_loss_limit = parser_order_type.add_parser('stop-loss-limit', help='stop-loss-limit order')
+    parser_stop_loss_limit.add_argument('price', help='stop loss price')
+    parser_stop_loss_limit.add_argument('price2', help='limit price')
 
-    parser_trailing_stop = parser_order_type.add_parser('trailing-stop', help="trailing-stop order")
-    parser_trailing_stop.add_argument('price', help="price offset")
+    parser_trailing_stop = parser_order_type.add_parser('trailing-stop', help='trailing-stop order')
+    parser_trailing_stop.add_argument('price', help='price offset')
 
-    parser_query = parser_cmd.add_parser('query', help="query orders")
+    parser_query = parser_cmd.add_parser('query', help='query orders')
     parser_query.set_defaults(func=query)
-    parser_query.add_argument('order_id', nargs='+', help="order id")
+    parser_query.add_argument('order_id', nargs='+', help='order id')
 
-    parser_cancel = parser_cmd.add_parser('cancel', help="cancel order")
+    parser_cancel = parser_cmd.add_parser('cancel', help='cancel order')
     parser_cancel.set_defaults(func=cancel)
-    parser_cancel.add_argument('order_id', help="order id")
+    parser_cancel.add_argument('order_id', help='order id')
 
-    parser_balance = parser_cmd.add_parser('balance', help="get account balance")
+    parser_balance = parser_cmd.add_parser('balance', help='get account balance')
     parser_balance.set_defaults(func=balance)
 
-    parser_open = parser_cmd.add_parser('open', help="get open orders")
+    parser_open = parser_cmd.add_parser('open', help='get open orders')
     parser_open.set_defaults(func=open)
 
-    parser_closed = parser_cmd.add_parser('closed', help="get closed orders")
+    parser_closed = parser_cmd.add_parser('closed', help='get closed orders')
     parser_closed.set_defaults(func=closed)
-    parser_closed.add_argument('num', type=int, help="number of hours")
+    parser_closed.add_argument('num', type=int, help='number of hours')
 
-    parser_position = parser_cmd.add_parser('position', help="get open positions")
+    parser_position = parser_cmd.add_parser('position', help='get open positions')
     parser_position.set_defaults(func=position)
-    parser_position.add_argument('-p', '--profit', action='store_true', help="include profit data")
+    parser_position.add_argument('-p', '--profit', action='store_true', help='include profit data')
 
-    parser_ticker = parser_cmd.add_parser('ticker', help="get ticker information")
+    parser_ticker = parser_cmd.add_parser('ticker', help='get ticker information')
     parser_ticker.set_defaults(func=ticker)
-    parser_ticker.add_argument('pair', help="asset pair")
+    parser_ticker.add_argument('pair', help='asset pair')
 
-    parser_ohlc = parser_cmd.add_parser('ohlc', help="get OHLC data")
+    parser_ohlc = parser_cmd.add_parser('ohlc', help='get OHLC data')
     parser_ohlc.set_defaults(func=ohlc)
-    parser_ohlc.add_argument('pair', help="asset pair")
-    parser_ohlc.add_argument('interval', type=int, help="interval in minutes")
-    parser_ohlc.add_argument('num', type=int, help="number of candles")
+    parser_ohlc.add_argument('pair', help='asset pair')
+    parser_ohlc.add_argument('interval', help='interval in minutes')
+    parser_ohlc.add_argument('num', type=int, help='number of candles')
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
@@ -103,7 +103,7 @@ def order(args):
 
         if not percent:
             raise krakencli.KrakenError(
-                "volume {} is not a valid percentage".format(args.volume))
+                'volume {} is not a valid percentage'.format(args.volume))
 
         balance = k.get_balance()
 
@@ -153,7 +153,7 @@ def order(args):
 def query(args):
     k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
 
-    result = k.query_orders(",".join(args.order_id))
+    result = k.query_orders(','.join(args.order_id))
 
     print(tabulate.tabulate(
         [[order.txid, order.info.direction, order.info.order_type,
@@ -244,9 +244,15 @@ def ohlc(args):
     k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
 
     time = k.get_time()
-    since = time - args.interval * 60 * args.num - 1
 
-    result = k.get_ohlc(args.pair, args.interval, since)
+    re_interval = re.match(r'(\d*)(H?)', args.interval)
+
+    # minutes: 1 (default), 5, 15, 30, 60, 240
+    # intervals: 1, 5, 15, 30, 1H, 4H
+    minutes = int(re_interval.group(1)) * 60 if re_interval.group(2) else int(re_interval.group(1))
+    since = time - args.num * minutes * 60 - 1
+
+    result = k.get_ohlc(args.pair, minutes, since)
 
     print(tabulate.tabulate([
         [datetime.datetime.fromtimestamp(ohlc.time), ohlc.open, ohlc.high,
