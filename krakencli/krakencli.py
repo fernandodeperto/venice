@@ -45,8 +45,8 @@ class OrderInfo:
         self.pair = descr['pair']
         self.leverage = descr['leverage']
         self.direction = descr['type']
-        self.price = float(descr['price'])
-        self.price2 = float(descr['price2'])
+        self.price = descr['price']
+        self.price2 = descr['price2']
 
         if 'close' in descr:
             self.close = descr['close']
@@ -338,9 +338,9 @@ class Krakencli:
             'pair': pair,
             'type': direction,
             'ordertype': order_type,
-            'volume': '{:.{prec}f}'.format(volume, prec=DEFAULT_VOLUME_PRECISION),
-            'price': '{:.{prec}f}'.format(price, prec=DEFAULT_PRECISION),
-            'price2': '{:.{prec}f}'.format(price2, prec=DEFAULT_PRECISION),
+            'volume': volume,
+            'price': price,
+            'price2': price2,
             'leverage': leverage,
             'flags': flags,
         }

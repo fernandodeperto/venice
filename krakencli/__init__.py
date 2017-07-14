@@ -38,24 +38,24 @@ def main():
     parser_order_type.add_parser('market', help="market order")
 
     parser_limit = parser_order_type.add_parser('limit', help="limit order")
-    parser_limit.add_argument('price', type=float, help="limit price")
+    parser_limit.add_argument('price', help="limit price")
 
     parser_stop_loss = parser_order_type.add_parser('stop-loss', help="stop-loss order")
-    parser_stop_loss.add_argument('price', type=float, help="stop loss price")
+    parser_stop_loss.add_argument('price', help="stop loss price")
 
     parser_take_profit = parser_order_type.add_parser('take-profit', help="take-profit order")
-    parser_take_profit.add_argument('price', type=float, help="take profit price")
+    parser_take_profit.add_argument('price', help="take profit price")
 
     parser_stop_loss_profit = parser_order_type.add_parser('stop-loss-profit', help="stop-loss-profit order")
-    parser_stop_loss_profit.add_argument('price', type=float, help="stop loss price")
-    parser_stop_loss_profit.add_argument('price2', type=float, help="profit price")
+    parser_stop_loss_profit.add_argument('price', help="stop loss price")
+    parser_stop_loss_profit.add_argument('price2', help="profit price")
 
     parser_stop_loss_limit = parser_order_type.add_parser('stop-loss-limit', help="stop-loss-limit order")
-    parser_stop_loss_limit.add_argument('price', type=float, help="stop loss price")
-    parser_stop_loss_limit.add_argument('price2', type=float, help="limit price")
+    parser_stop_loss_limit.add_argument('price', help="stop loss price")
+    parser_stop_loss_limit.add_argument('price2', help="limit price")
 
     parser_trailing_stop = parser_order_type.add_parser('trailing-stop', help="trailing-stop order")
-    parser_trailing_stop.add_argument('price', type=float, help="price offset")
+    parser_trailing_stop.add_argument('price', help="price offset")
 
     parser_query = parser_cmd.add_parser('query', help="query orders")
     parser_query.set_defaults(func=query)
