@@ -176,9 +176,14 @@ def balance(args):
 
     result = k.get_balance()
 
+    costs = {x: result.pairs[x] * k.get_price('{}ZEUR'.format(x)) if x != 'ZEUR' else None for x in result.pairs}
+
+    pairs = [[x, result.pairs[x], costs[x]] for x in result.pairs]
+    pairs.append([None, sum([costs[x] if costs[x] else result.pairs[x] for x in costs]), None])
+
     print(tabulate.tabulate(
-        [[x, result.pairs[x]] for x in result.pairs],
-        headers=['pair', 'balance'],
+        pairs,
+        headers=['pair', 'balance', 'cost'],
         floatfmt='.{}g'.format(MAXIMUM_PRECISION)))
 
 
