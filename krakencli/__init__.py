@@ -5,12 +5,15 @@ import datetime
 import re
 import os.path
 
+import sys
+import pprint
+
 import argcomplete
 import tabulate
 
 from krakencli import krakencli
 
-DEFAULT_PRECISION = 5
+MAXIMUM_PRECISION = 10
 
 
 def main():
@@ -96,15 +99,19 @@ def order(args):
 
     if '%' in args.volume:
         pairs = re.match(r'([A-Z]{4})([A-Z]{4})', args.pair)
-        percent = re.match(r'([0-9]{1,3})%', args.volume)
+        percent = re.match(r'(\d+\.\d+|\d+)%', args.volume)
+
+        if not percent:
+            raise krakencli.KrakenError(
+                "volume {} is not a valid percentage".format(args.volume))
 
         balance = k.get_balance()
 
         if args.direction == 'buy':
             price = k.get_price(args.pair)
-            volume = float(balance.pairs[pairs.group(2)]) / price * int(percent.group(1)) / 100
+            volume = float(balance.pairs[pairs.group(2)]) / price * float(percent.group(1)) / 100
         else:
-            volume = float(balance.pairs[pairs.group(1)])
+            volume = float(balance.pairs[pairs.group(1)]) * float(percent.group(1)) / 100
 
     elif args.quote:
         volume = float(args.volume)
@@ -154,7 +161,7 @@ def query(args):
           order.fee, order.avg_price, order.stop_price] for order in result],
         headers=['txid', 'direction', 'order_type', 'price', 'price2',
                  'leverage', 'cost', 'fee', 'avg_price', 'stop_price'],
-        floatfmt='.{}f'.format(3)))
+        floatfmt='.{}g'.format(MAXIMUM_PRECISION)))
 
 
 def cancel(args):
@@ -170,7 +177,7 @@ def balance(args):
     print(tabulate.tabulate(
         [[x, result.pairs[x]] for x in result.pairs],
         headers=['pair', 'balance'],
-        floatfmt='.{}f'.format(DEFAULT_PRECISION)))
+        floatfmt='.{}g'.format(MAXIMUM_PRECISION)))
 
 
 def open(args):
@@ -186,7 +193,7 @@ def open(args):
         headers=[
             'txid', 'status', 'vol', 'vol_exec', 'direction', 'order_type',
             'pair', 'leverage', 'price', 'price2'],
-        floatfmt='.{}f'.format(DEFAULT_PRECISION)))
+        floatfmt='.{}g'.format(MAXIMUM_PRECISION)))
 
 
 def closed(args):
@@ -199,11 +206,11 @@ def closed(args):
         [order.txid, order.status, order.volume, order.volume_exec,
          order.info.direction, order.info.order_type, order.info.pair,
          order.info.leverage, order.info.price, order.info.price2] for order in
-        result],
+        result if order.status == 'closed'],
         headers=[
             'txid', 'status', 'vol', 'vol_exec', 'direction', 'order_type',
             'pair', 'leverage', 'price', 'price2'],
-        floatfmt='.{}f'.format(DEFAULT_PRECISION)))
+        floatfmt='.{}g'.format(MAXIMUM_PRECISION)))
 
 
 def position(args):
@@ -219,7 +226,7 @@ def position(args):
         headers=[
             'posid', 'cost', 'fee', 'margin', 'profit', 'order_type', 'pair',
             'status', 'direction', 'volume', 'volume_closed'],
-        floatfmt='.{}f'.format(DEFAULT_PRECISION)))
+        floatfmt='.{}g'.format(MAXIMUM_PRECISION)))
 
 
 def ticker(args):
@@ -230,7 +237,7 @@ def ticker(args):
     print(tabulate.tabulate([
         [ticker.pair, ticker.ask, ticker.bid, ticker.last_price]],
         headers=['pair', 'ask', 'bid', 'last_price'],
-        floatfmt='.{}f'.format(DEFAULT_PRECISION)))
+        floatfmt='.{}g'.format(MAXIMUM_PRECISION)))
 
 
 def ohlc(args):
@@ -246,4 +253,4 @@ def ohlc(args):
          ohlc.low, ohlc.close, ohlc.volume] for ohlc in result],
         headers=[
             'time', 'open', 'high', 'low', 'close', 'volume'],
-        floatfmt='.{}f'.format(DEFAULT_PRECISION)))
+        floatfmt='.{}g'.format(MAXIMUM_PRECISION)))

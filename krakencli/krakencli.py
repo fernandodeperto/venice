@@ -1,7 +1,9 @@
 import krakenex
+# import pprint
 
 
 DEFAULT_PRECISION = 5
+DEFAULT_VOLUME_PRECISION = 10
 
 
 class KrakenError(Exception):
@@ -336,7 +338,7 @@ class Krakencli:
             'pair': pair,
             'type': direction,
             'ordertype': order_type,
-            'volume': '{:.{prec}f}'.format(volume, prec=DEFAULT_PRECISION),
+            'volume': '{:.{prec}f}'.format(volume, prec=DEFAULT_VOLUME_PRECISION),
             'price': '{:.{prec}f}'.format(price, prec=DEFAULT_PRECISION),
             'price2': '{:.{prec}f}'.format(price2, prec=DEFAULT_PRECISION),
             'leverage': leverage,
