@@ -57,7 +57,7 @@ def main():
     parser_trailing_stop = parser_order_type.add_parser('trailing-stop', help='trailing-stop order')
     parser_trailing_stop.add_argument('price', help='price offset')
 
-    parser_query = parser_cmd.add_parser('query', help='query orders')
+    parser_query = parser_cmd.add_parser('query', aliases=['q'], help='query orders')
     parser_query.set_defaults(func=query)
     parser_query.add_argument('order_id', nargs='+', help='order id')
 
@@ -65,7 +65,7 @@ def main():
     parser_cancel.set_defaults(func=cancel)
     parser_cancel.add_argument('order_id', nargs='+', help='order id')
 
-    parser_balance = parser_cmd.add_parser('balance', help='get account balance')
+    parser_balance = parser_cmd.add_parser('balance', aliases=['b', 'bal'], help='get account balance')
     parser_balance.set_defaults(func=balance)
 
     parser_open = parser_cmd.add_parser('open', help='get open orders')
@@ -76,7 +76,7 @@ def main():
     parser_closed.add_argument('-i', '--ignore', action='store_true', help='ignore canceled orders')
     parser_closed.add_argument('interval', help='search interval')
 
-    parser_position = parser_cmd.add_parser('position', help='get open positions')
+    parser_position = parser_cmd.add_parser('position', aliases=['pos'], help='get open positions')
     parser_position.set_defaults(func=position)
 
     parser_ticker = parser_cmd.add_parser('ticker', help='get ticker information')
