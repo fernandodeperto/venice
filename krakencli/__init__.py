@@ -78,7 +78,6 @@ def main():
 
     parser_position = parser_cmd.add_parser('position', help='get open positions')
     parser_position.set_defaults(func=position)
-    parser_position.add_argument('-p', '--profit', action='store_true', help='include profit data')
 
     parser_ticker = parser_cmd.add_parser('ticker', help='get ticker information')
     parser_ticker.set_defaults(func=ticker)
@@ -228,16 +227,15 @@ def closed(args):
 def position(args):
     k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
 
-    result = k.get_open_positions(args.profit)
+    result = k.get_open_positions(docalcs=True)
 
     print(tabulate.tabulate([
-        [position.position_id, position.cost, position.fee, position.margin,
+        [position.txid, position.cost, position.fee, position.margin,
          position.profit, position.order_type, position.pair, position.status,
          position.direction, position.volume, position.volume_closed] for
         position in result],
-        headers=[
-            'posid', 'cost', 'fee', 'margin', 'profit', 'order_type', 'pair',
-            'status', 'direction', 'volume', 'volume_closed'],
+        headers=['txid', 'cost', 'fee', 'margin', 'profit', 'order_type',
+                 'pair', 'status', 'direction', 'volume', 'volume_closed'],
         floatfmt='.{}g'.format(MAXIMUM_PRECISION)))
 
 
