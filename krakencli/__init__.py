@@ -27,7 +27,7 @@ def main():
     parser_order.set_defaults(func=order)
     parser_order.add_argument('-q', '--quote', action='store_true', help='convert volume to quote currency')
     parser_order.add_argument('-n', '--validate', action='store_true', help='do not place order, just validate arguments')
-    parser_order.add_argument('pair', help='asset pair')
+    parser_order.add_argument('pair', choices=['XETHZEUR', 'XLTCZEUR', 'XXBTZEUR', 'XETHXXBT'], help='asset pair')
     parser_order.add_argument('direction', choices=['buy', 'sell'], help='order direction')
     parser_order.add_argument('leverage', choices=['none', '2', '3', '4', '5'], help='leverage level')
     parser_order.add_argument('volume', help='order volume')
@@ -50,7 +50,7 @@ def main():
     parser_stop_loss_profit.add_argument('price', help='stop loss price')
     parser_stop_loss_profit.add_argument('price2', help='profit price')
 
-    parser_stop_loss_limit = parser_order_type.add_parser('stop-loss-limit', help='stop-loss-limit order')
+    parser_stop_loss_limit = parser_order_type.add_parser('stop-loss-and-limit', help='stop-loss-limit order')
     parser_stop_loss_limit.add_argument('price', help='stop loss price')
     parser_stop_loss_limit.add_argument('price2', help='limit price')
 
@@ -108,8 +108,14 @@ def order(args):
         balance = k.get_balance()
 
         if args.direction == 'buy':
-            price = k.get_price(args.pair)
-            volume = float(balance.pairs[pairs.group(2)]) / price * float(percent.group(1)) / 100
+            if args.order_type == 'market':
+                volume = float(balance.pairs[pairs.group(2)]) / k.get_price(args.pair) * float(percent.group(1)) / 100
+            elif args.order_type in ['limit', 'stop-loss', 'take-profit']:
+                volume = float(balance.pairs[pairs.group(2)]) / args.price * float(percent.group(1)) / 100
+            else:
+                raise krakencli.KrakenError(
+                    'order type {} does not support buy orders with the percentage option'.format(args.order_type))
+
         else:
             volume = float(balance.pairs[pairs.group(1)]) * float(percent.group(1)) / 100
 
@@ -118,12 +124,11 @@ def order(args):
 
         if args.order_type == 'market':
             volume /= k.get_price(args.pair)
-        elif args.order_type == 'stop-loss-limit':
-            volume /= args.price2
         elif args.order_type in ['limit', 'stop-loss', 'take-profit']:
             volume /= args.price
-        elif args.order_type == 'trailing-stop':
-            volume /= (k.get_price(args.pair) + args.price)
+        else:
+            raise krakencli.KrakenError(
+                'order type {} does not support quote option'.format(args.order_type))
 
     else:
         volume = float(args.volume)
