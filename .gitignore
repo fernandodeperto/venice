@@ -1,4 +1,2 @@
-bin
-include
-lib
-pip-selfcheck.json
+__pycache__/
+*.egg-info/
