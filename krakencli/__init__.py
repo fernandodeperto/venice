@@ -6,14 +6,14 @@ import re
 import os.path
 
 import sys
-import pprint
+# import pprint
 
 import argcomplete
 import tabulate
 
 from krakencli import krakencli
 
-MAXIMUM_PRECISION = 8
+MAXIMUM_PRECISION = 9
 
 
 def main():
@@ -86,7 +86,7 @@ def main():
     parser_ohlc = parser_cmd.add_parser('ohlc', help='get OHLC data')
     parser_ohlc.set_defaults(func=ohlc)
     parser_ohlc.add_argument('pair', help='asset pair')
-    parser_ohlc.add_argument('interval', help='interval in minutes')
+    parser_ohlc.add_argument('interval', help='candle interval')
     parser_ohlc.add_argument('num', type=int, help='number of candles')
 
     argcomplete.autocomplete(parser)
@@ -111,7 +111,7 @@ def order(args):
             if args.order_type == 'market':
                 volume = float(balance.pairs[pairs.group(2)]) / k.get_price(args.pair) * float(percent.group(1)) / 100
             elif args.order_type in ['limit', 'stop-loss', 'take-profit']:
-                volume = float(balance.pairs[pairs.group(2)]) / args.price * float(percent.group(1)) / 100
+                volume = float(balance.pairs[pairs.group(2)]) / float(args.price) * float(percent.group(1)) / 100
             else:
                 raise krakencli.KrakenError(
                     'order type {} does not support buy orders with the percentage option'.format(args.order_type))
@@ -125,7 +125,7 @@ def order(args):
         if args.order_type == 'market':
             volume /= k.get_price(args.pair)
         elif args.order_type in ['limit', 'stop-loss', 'take-profit']:
-            volume /= args.price
+            volume /= float(args.price)
         else:
             raise krakencli.KrakenError(
                 'order type {} does not support quote option'.format(args.order_type))
@@ -163,9 +163,11 @@ def query(args):
     print(tabulate.tabulate(
         [[order.txid, order.info.direction, order.info.order_type,
           order.info.price, order.info.price2, order.info.leverage, order.cost,
-          order.fee, order.avg_price, order.stop_price] for order in result],
+          order.fee, order.avg_price, order.stop_price, order.status,
+          order.volume, order.volume_exec] for order in result],
         headers=['txid', 'direction', 'order_type', 'price', 'price2',
-                 'leverage', 'cost', 'fee', 'avg_price', 'stop_price'],
+                 'leverage', 'cost', 'fee', 'avg_price', 'stop_price',
+                 'status', 'volume', 'volume_exec'],
         floatfmt='.{}g'.format(MAXIMUM_PRECISION)))
 
 
