@@ -75,9 +75,16 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     # install_requires=['peppercorn'],
 
+    extras_require={
+        'dev': ['check-manifest'],
+        'test': ['coverage'],
+    },
+
     entry_points={
         'console_scripts': [
             'krakencli=krakencli:main',
         ],
     },
+
+    test_suite='tests',
 )
