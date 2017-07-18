@@ -1,45 +1,39 @@
 import unittest
 
+import logging
+from logging.config import fileConfig
+
 import pprint
 
-import exchange.kraken
+import kraken.kraken
 
 
-class TestKrakenAPI(unittest.TestCase):
-    # def test_public(self):
-    #     with exchange.kraken.KrakenAPI() as k:
-    #         result = k.query_public('Time')
+class TestKraken(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    #         pprint.pprint(result)
+        logging.config.fileConfig('logging.conf')
 
-    # def test_private(self):
-    #     with exchange.kraken.KrakenAPI() as k:
-    #         k.load_key('/home/fernando/.kraken.key')
-    #         result = k.query_private('Balance')
-
-    #         pprint.pprint(result)
-
-    def test_query_order(self):
-        with exchange.kraken.KrakenAPI() as k:
-            k.load_key('/home/fernando/.kraken.key')
-            k.query_orders(['OLF5GA-E3UFL-WVFQDZ'])
+    def test_query_orders(self):
+        k = kraken.kraken.Kraken()
+        k.load_key('/home/fernando/.kraken.key')
+        k.query_orders(['OLF5GA-E3UFL-WVFQDZ'])
 
     def test_get_ohlc(self):
-        with exchange.kraken.KrakenAPI() as k:
-            k.get_ohlc('XETHZEUR', 15)
+        k = kraken.kraken.Kraken()
+        k.get_ohlc('XETHZEUR', 15)
 
     def test_get_ticker(self):
-        with exchange.kraken.KrakenAPI() as k:
-            k.get_ticker('XETHZEUR')
+        k = kraken.kraken.Kraken()
+        k.get_ticker('XETHZEUR')
 
     def test_get_balance(self):
-        with exchange.kraken.KrakenAPI() as k:
-            k.load_key('/home/fernando/.kraken.key')
-            k.get_balance()
+        k = kraken.kraken.Kraken()
+        k.load_key('/home/fernando/.kraken.key')
+        k.get_balance()
 
     def test_get_positions(self):
-        with exchange.kraken.KrakenAPI() as k:
-            k.load_key('/home/fernando/.kraken.key')
-            k.get_positions()
+        k = kraken.kraken.Kraken()
+        k.load_key('/home/fernando/.kraken.key')
 
 

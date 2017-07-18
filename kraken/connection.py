@@ -5,6 +5,9 @@ import hashlib
 import hmac
 import base64
 
+import logging
+from logging.config import fileConfig
+
 import http.client
 
 import urllib.request
@@ -15,7 +18,7 @@ NONCE_MULTIPLIER = 1000
 
 
 class KrakenAPI:
-    def __init__(self, key='', secret='', url='api.kraken.com', version='0'):
+    def __init__(self, key, secret, url='api.kraken.com', version='0'):
         self.key = key
         self.secret = secret
         self.url = url
@@ -32,11 +35,6 @@ class KrakenAPI:
 
     def __exit__(self, type, value, traceback):
         self.connection.close()
-
-    def load_key(self, path):
-        with open(path, 'r') as f:
-            self.key = f.readline().strip()
-            self.secret = f.readline().strip()
 
     def query_public(self, method, request={}):
         path = self._path('public', method)
@@ -68,7 +66,12 @@ class KrakenAPI:
         self.connection.request('POST', path, data, headers)
         response = self.connection.getresponse()
 
-        return json.loads(response.read().decode())
+        result = json.loads(response.read().decode())
+
+        logger = logging.getLogger('kraken.connection._query')
+        logger.debug(result)
+
+        return result
 
     def _path(self, request_type, method):
         return '/' + '/'.join([self.version, request_type, method])

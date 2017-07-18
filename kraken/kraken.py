@@ -11,7 +11,7 @@ import urllib.request
 import urllib.parse
 import urllib.error
 
-import pprint
+import kraken.connection
 
 NONCE_MULTIPLIER = 1000
 
@@ -149,8 +149,8 @@ class Balance:
 
 
 class Position:
-    def __init__(self, posid, ordertxid, pair, time, type, ordertype, cost,
-                 fee, vol, vol_closed, margin, value, net, misc, oflags):
+    def __init__(self, posid, ordertxid, pair, time, type, ordertype, cost, fee, vol, vol_closed,
+                 margin, value, net, misc, oflags, rollovertm, terms, posstatus):
         """
         <position_txid> = open position info
             ordertxid = order responsible for execution of trade
@@ -184,72 +184,23 @@ class Position:
         self.net = net
         self.misc = misc
         self.oflags = oflags
+        self.rollovertm = rollovertm
+        self.terms = terms
+        self.posstatus = posstatus
 
     def __str__(self):
         return self.position_id
 
 
-class KrakenAPI:
-    def __init__(self, key='', secret='', url='api.kraken.com', version='0'):
+class Kraken:
+    def __init__(self, key='', secret=''):
         self.key = key
         self.secret = secret
-        self.url = url
-        self.version = version
-        self.connection = None
-
-        self.headers = {
-            'User-Agent': 'krakenapi/0.9'
-        }
-
-    def __enter__(self):
-        self.connection = http.client.HTTPSConnection(self.url)
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self.connection.close()
 
     def load_key(self, path):
         with open(path, 'r') as f:
             self.key = f.readline().strip()
             self.secret = f.readline().strip()
-
-    def query_public(self, method, request={}):
-        path = self._path('public', method)
-        return self._query(path, request)
-
-    def query_private(self, method, request={}):
-        path = self._path('private', method)
-
-        request['nonce'] = self._nonce()
-
-        post_data = (str(request['nonce']) + urllib.parse.urlencode(request)).encode()
-
-        message = path.encode() + hashlib.sha256(post_data).digest()
-        signature = hmac.new(base64.b64decode(self.secret), message, hashlib.sha512)
-        digest = base64.b64encode(signature.digest())
-
-        headers = {
-            'API-Key': self.key,
-            'API-Sign': digest.decode()
-        }
-
-        return self._query(path, request, headers)
-
-    def _query(self, path, request={}, headers={}):
-        data = urllib.parse.urlencode(request)
-
-        headers.update(self.headers)
-
-        self.connection.request('POST', path, data, headers)
-        response = self.connection.getresponse()
-
-        return json.loads(response.read().decode())
-
-    def _path(self, request_type, method):
-        return '/' + '/'.join([self.version, request_type, method])
-
-    def _nonce(self):
-        return int(NONCE_MULTIPLIER * time.time())
 
     def query_orders(self, txids):
         """
@@ -263,7 +214,8 @@ class KrakenAPI:
         request = {'txid': ','.join(txids)}
 
         try:
-            result = self.query_private('QueryOrders', request)
+            with kraken.connection.KrakenAPI(self.key, self.secret) as k:
+                result = k.query_private('QueryOrders', request)
         except:
             raise
 
@@ -279,7 +231,8 @@ class KrakenAPI:
             request['since'] = since
 
         try:
-            result = self.query_public('OHLC', request)
+            with kraken.connection.KrakenAPI(self.key, self.secret) as k:
+                result = k.query_public('OHLC', request)
         except:
             raise
 
@@ -306,20 +259,20 @@ class KrakenAPI:
         request = {'pair': pair}
 
         try:
-            result = self.query_public('Ticker', request)
+            with kraken.connection.KrakenAPI(self.key, self.secret) as k:
+                result = k.query_public('Ticker', request)
         except:
             raise
 
         if result['error']:
             raise KrakenError(request, result['error'])
 
-        pprint.pprint(result)
-
         return Ticker(pair, *result['result'][pair])
 
     def get_balance(self):
         try:
-            result = self.query_private('Balance')
+            with kraken.connection.KrakenAPI(self.key, self.secret) as k:
+                result = k.query_private('Balance')
         except:
             raise
 
@@ -334,13 +287,12 @@ class KrakenAPI:
         """
 
         try:
-            result = self.query_private('OpenPositions', {'docalcs': 'yes'})
+            with kraken.connection.KrakenAPI(self.key, self.secret) as k:
+                result = k.query_private('OpenPositions', {'docalcs': 'yes'})
         except:
             raise
 
         if result['error']:
             raise KrakenError(result['error'])
-
-        pprint.pprint(result)
 
         return [Position(x, **result['result'][x]) for x in result['result']]
