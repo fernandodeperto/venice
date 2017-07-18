@@ -59,6 +59,10 @@ class KrakenAPI:
         return self._query(path, request, headers)
 
     def _query(self, path, request={}, headers={}):
+        logger = logging.getLogger('kraken.connection._query')
+
+        logger.debug(request)
+
         data = urllib.parse.urlencode(request)
 
         headers.update(self.headers)
@@ -68,7 +72,6 @@ class KrakenAPI:
 
         result = json.loads(response.read().decode())
 
-        logger = logging.getLogger('kraken.connection._query')
         logger.debug(result)
 
         return result
