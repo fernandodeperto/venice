@@ -59,7 +59,8 @@ class KrakenAPI:
         return self._query(path, request, headers)
 
     def _query(self, path, request={}, headers={}):
-        logger = logging.getLogger('kraken.connection._query')
+        logging.config.fileConfig('logging.conf')
+        logger = logging.getLogger('krakenapi')
 
         logger.debug(request)
 

@@ -1,8 +1,5 @@
 import unittest
 
-import logging
-from logging.config import fileConfig
-
 import pprint
 
 import kraken.kraken
@@ -11,8 +8,6 @@ import kraken.kraken
 class TestKraken(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        logging.config.fileConfig('logging.conf')
 
     def test_query_orders(self):
         k = kraken.kraken.Kraken()
