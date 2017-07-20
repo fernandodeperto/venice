@@ -11,7 +11,7 @@ import urllib.request
 import urllib.parse
 import urllib.error
 
-import kraken.connection
+from .connection import KrakenConnection
 
 NONCE_MULTIPLIER = 1000
 
@@ -192,7 +192,7 @@ class Position:
         return self.position_id
 
 
-class Kraken:
+class KrakenAPI:
     def __init__(self, key='', secret=''):
         self.key = key
         self.secret = secret
@@ -214,7 +214,7 @@ class Kraken:
         request = {'txid': ','.join(txids)}
 
         try:
-            with kraken.connection.KrakenAPI(self.key, self.secret) as k:
+            with KrakenConnection(self.key, self.secret) as k:
                 result = k.query_private('QueryOrders', request)
         except:
             raise
@@ -231,7 +231,7 @@ class Kraken:
             request['since'] = since
 
         try:
-            with kraken.connection.KrakenAPI(self.key, self.secret) as k:
+            with KrakenConnection(self.key, self.secret) as k:
                 result = k.query_public('OHLC', request)
         except:
             raise
@@ -259,7 +259,7 @@ class Kraken:
         request = {'pair': pair}
 
         try:
-            with kraken.connection.KrakenAPI(self.key, self.secret) as k:
+            with KrakenConnection(self.key, self.secret) as k:
                 result = k.query_public('Ticker', request)
         except:
             raise
@@ -271,7 +271,7 @@ class Kraken:
 
     def get_balance(self):
         try:
-            with kraken.connection.KrakenAPI(self.key, self.secret) as k:
+            with KrakenConnection(self.key, self.secret) as k:
                 result = k.query_private('Balance')
         except:
             raise
@@ -287,7 +287,7 @@ class Kraken:
         """
 
         try:
-            with kraken.connection.KrakenAPI(self.key, self.secret) as k:
+            with KrakenConnection(self.key, self.secret) as k:
                 result = k.query_private('OpenPositions', {'docalcs': 'yes'})
         except:
             raise

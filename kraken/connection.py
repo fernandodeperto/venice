@@ -5,19 +5,19 @@ import hashlib
 import hmac
 import base64
 
-import logging
-from logging.config import fileConfig
-
 import http.client
 
 import urllib.request
 import urllib.parse
 import urllib.error
 
+import logging
+import logging.config
+
 NONCE_MULTIPLIER = 1000
 
 
-class KrakenAPI:
+class KrakenConnection:
     def __init__(self, key, secret, url='api.kraken.com', version='0'):
         self.key = key
         self.secret = secret
@@ -59,7 +59,6 @@ class KrakenAPI:
         return self._query(path, request, headers)
 
     def _query(self, path, request={}, headers={}):
-        logging.config.fileConfig('logging.conf')
         logger = logging.getLogger('krakenapi')
 
         logger.debug(request)
