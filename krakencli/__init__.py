@@ -178,6 +178,9 @@ def cancel(args):
 
 
 def balance(args):
+    def balance_get_key(pair):
+        return pair[0]
+
     k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
 
     result = k.get_balance()
@@ -185,6 +188,7 @@ def balance(args):
     costs = {x: result.pairs[x] * k.get_price('{}ZEUR'.format(x)) if x != 'ZEUR' else None for x in result.pairs}
 
     pairs = [[x, result.pairs[x], costs[x]] for x in result.pairs]
+    pairs = sorted(pairs, key=balance_get_key)
     pairs.append([None, sum([costs[x] if costs[x] else result.pairs[x] for x in costs]), None])
 
     print(tabulate.tabulate(
