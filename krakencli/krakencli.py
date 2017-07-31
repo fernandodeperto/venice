@@ -1,5 +1,4 @@
 import krakenex
-# import pprint
 
 
 class KrakenError(Exception):
