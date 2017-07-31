@@ -1,5 +1,5 @@
 from kraken.strategy import KrakenStrategy
 
 class Momentum(KrakenStrategy):
-    def __init__(self):
-        pass
+    def parse_config(self, config):
+        self.length = config['length']
