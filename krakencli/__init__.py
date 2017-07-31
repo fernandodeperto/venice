@@ -13,7 +13,7 @@ import tabulate
 
 from krakencli import krakencli
 
-MAXIMUM_PRECISION = 9
+MAXIMUM_PRECISION = 12
 
 
 def main():
