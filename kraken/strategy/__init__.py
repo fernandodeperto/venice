@@ -4,12 +4,15 @@ Basic strategy package module.
 import importlib
 import inspect
 import sys
+import signal
+import time
 
 from os import listdir
 from os.path import isfile, join, dirname, splitext, expanduser
 from collections import namedtuple
 from configparser import ConfigParser
 from abc import ABCMeta, abstractmethod
+from time import sleep
 
 from argparse import ArgumentParser
 from argcomplete import autocomplete
@@ -39,7 +42,11 @@ class KrakenStrategy(metaclass=ABCMeta):
 
     @abstractmethod
     def parse_config(self, config):
-            pass
+        pass
+
+    @abstractmethod
+    def get_position(self, ohlc, ticker):
+        pass
 
 
 def main():
@@ -54,10 +61,32 @@ def main():
     autocomplete(parser)
     args = parser.parse_args()
 
+    run = 1
+
+    def signal_handler(signal, frame):
+        nonlocal run
+        run = 0
+
+    signal.signal(signal.SIGINT, signal_handler)
+
     classes = load_modules(args.strategy)
     strategies = [x.value() for x in classes]
 
-    print(strategies)
+    #TODO get historic ohlc data
+
+    while run:
+        start_time = time.time()
+
+        #TODO confirm pending orders
+
+        #TODO update ohlc and ticker data
+
+        #TODO run all strategies
+        #TODO check strategies' answers
+
+        #TODO decide position based on the answers
+
+        sleep(int(args.refresh) - (time.time() - start_time))
 
 
 def load_modules(module_names):

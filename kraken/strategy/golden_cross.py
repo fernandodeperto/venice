@@ -11,3 +11,6 @@ class GoldenCross(KrakenStrategy):
     def parse_config(self, config):
         self.fast_sma = config['fast_sma']
         self.slow_sma = config['slow_sma']
+
+    def get_position(self, ohlc, ticker):
+        pass
