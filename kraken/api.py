@@ -1,3 +1,7 @@
+"""
+Main Kraken API class and helper classes.
+"""
+
 from .connection import KrakenConnection
 
 NONCE_MULTIPLIER = 1000
