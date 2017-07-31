@@ -1,35 +1,31 @@
-import json
-import time
-
-import hashlib
-import hmac
-import base64
-
-import http.client
-
-import urllib.request
-import urllib.parse
-import urllib.error
-
 from .connection import KrakenConnection
 
 NONCE_MULTIPLIER = 1000
 
 
 class KrakenError(Exception):
+    """
+    Main Kraken response error.
+    """
     pass
 
 
 class OrderRequest:
+    """
+    Order request data class.
+    """
     def __init__(self, txids, descr):
         self.txids = txids
         self.descr = descr
 
     def __str__(self):
-            return self.descr
+        return self.descr
 
 
 class Order:
+    """
+    Order data class.
+    """
     def __init__(self, txid, closetm, cost, descr, expiretm, fee, misc, oflags,
                  opentm, price, reason, refid, starttm, userref, vol, vol_exec,
                  status=None, stopprice=None):
@@ -60,6 +56,9 @@ class Order:
 
 
 class OrderInfo:
+    """
+    Order info class.
+    """
     def __init__(self, pair, type, ordertype, price, price2, leverage,
                  order, close=None):
         """
@@ -105,6 +104,9 @@ class OrderInfo:
 
 
 class OHLC:
+    """
+    OHLC data class.
+    """
     def __init__(self, time, open, high, low, close, vwap, volume, count):
         self.time = time
         self.open = open
@@ -121,7 +123,10 @@ class OHLC:
 
 
 class Ticker:
-    def __init__(self, pair, a, b, c, h, l, o, p, t, v):
+    """
+    Ticker data class.
+    """
+    def __init__(self, pair, a, b, c):
         """
         a = ask array(<price>, <whole lot volume>, <lot volume>),
         b = bid array(<price>, <whole lot volume>, <lot volume>),
@@ -144,11 +149,17 @@ class Ticker:
 
 
 class Balance:
+    """
+    Balance class.
+    """
     def __init__(self, pairs):
         self.pairs = pairs
 
 
 class Position:
+    """
+    Position class.
+    """
     def __init__(self, posid, ordertxid, pair, time, type, ordertype, cost, fee, vol, vol_closed,
                  margin, value, net, misc, oflags, rollovertm, terms, posstatus):
         """
@@ -189,59 +200,74 @@ class Position:
         self.posstatus = posstatus
 
     def __str__(self):
-        return self.position_id
+        return self.posid
+
+
+class AssetInfo:
+    """
+    Asset info class.
+    """
+    def __init__(self, asset, display_decimals, altname, aclass, decimals):
+        self.asset = asset
+        self.display_decimals = display_decimals
+        self.altname = altname
+        self.aclass = aclass
+        self.decimals = decimals
+
+    def __str__(self):
+        return self.asset
 
 
 class KrakenAPI:
+    """
+    Kraken API class.
+    """
     def __init__(self, key='', secret=''):
         self.key = key
         self.secret = secret
 
     def load_key(self, path):
-        with open(path, 'r') as f:
-            self.key = f.readline().strip()
-            self.secret = f.readline().strip()
-
-    def query_orders(self, txids):
         """
-        Query orders from the exchange.
-
-        Parameters
-        ----------
-        txids : list
-            list of orders
+        Load key and secret from file.
         """
-        request = {'txid': ','.join(txids)}
+        with open(path, 'r') as key_file:
+            self.key = key_file.readline().strip()
+            self.secret = key_file.readline().strip()
+
+    @staticmethod
+    def get_server_time():
+        """
+        Get server time.
+        """
+        try:
+            with KrakenConnection() as k:
+                result = k.query_public('Time')
+        except:
+            raise
+
+        if result['error']:
+            raise KrakenError(result['error'])
+
+    @staticmethod
+    def get_assets_info(assets):
+        """
+        Get assets info.
+        """
+        request = {'asset': ','.join(assets)}
 
         try:
-            with KrakenConnection(self.key, self.secret) as k:
-                result = k.query_private('QueryOrders', request)
+            with KrakenConnection() as k:
+                result = k.query_public('Assets', request)
         except:
             raise
 
         if result['error']:
             raise KrakenError(request, result['error'])
 
-        return [Order(x, **result['result'][x]) for x in result['result']]
+        return [AssetInfo(x, **result['result'][x]) for x in result['result']]
 
-    def get_ohlc(self, pair, interval, since=None):
-        request = {'pair': pair, 'interval': interval}
-
-        if since:
-            request['since'] = since
-
-        try:
-            with KrakenConnection(self.key, self.secret) as k:
-                result = k.query_public('OHLC', request)
-        except:
-            raise
-
-        if result['error']:
-            raise KrakenError(request, result['error'])
-
-        return [OHLC(*x) for x in result['result'][pair]]
-
-    def get_ticker(self, pair):
+    @staticmethod
+    def get_ticker(pair):
         """
         Get ticker information.
 
@@ -256,20 +282,42 @@ class KrakenAPI:
             Object of the `Ticker` class with the information.
         """
 
-        request = {'pair': pair}
+        try:
+            with KrakenConnection() as k:
+                result = k.query_public('Ticker', {'pair': pair})
+        except:
+            raise
+
+        if result['error']:
+            raise KrakenError(result['error'])
+
+        return Ticker(pair, *result['result'][pair])
+
+    @staticmethod
+    def get_ohlc(pair, interval, since=None):
+        """
+        Get OHLC data.
+        """
+        request = {'pair': pair, 'interval': interval}
+
+        if since:
+            request['since'] = since
 
         try:
-            with KrakenConnection(self.key, self.secret) as k:
-                result = k.query_public('Ticker', request)
+            with KrakenConnection() as k:
+                result = k.query_public('OHLC', request)
         except:
             raise
 
         if result['error']:
             raise KrakenError(request, result['error'])
 
-        return Ticker(pair, *result['result'][pair])
+        return [OHLC(*x) for x in result['result'][pair]]
 
     def get_balance(self):
+        """
+        Get balance.
+        """
         try:
             with KrakenConnection(self.key, self.secret) as k:
                 result = k.query_private('Balance')
@@ -296,3 +344,149 @@ class KrakenAPI:
             raise KrakenError(result['error'])
 
         return [Position(x, **result['result'][x]) for x in result['result']]
+
+    def get_open_orders(self):
+        """
+        Get open orders.
+        """
+
+        try:
+            with KrakenConnection(self.key, self.secret) as k:
+                result = k.query_private('OpenOrders')
+        except:
+            raise
+
+        if result['error']:
+            raise KrakenError(result['error'])
+
+        return [Order(order, **result['result']['open'][order])
+                for order in result['result']['open']]
+
+    def get_closed_orders(self, time):
+        """
+        Get closed orders from a timestamp.
+
+        Parameters
+        ----------
+        time : str
+            UNIX timestamp
+
+        Returns
+        -------
+        list
+            List of :obj:`Order` objects containing the closed orders.
+        """
+
+        try:
+            with KrakenConnection(self.key, self.secret) as k:
+                result = k.query_private('ClosedOrders', {'start': time})
+        except:
+            raise
+
+        if result['error']:
+            raise KrakenError(result['error'])
+
+        return [Order(order, **result['result']['closed'][order])
+                for order in result['result']['closed']]
+
+    def query_orders(self, txids):
+        """
+        Query orders from the exchange.
+
+        Parameters
+        ----------
+        txids : list
+            list of orders
+        """
+        request = {'txid': ','.join(txids)}
+
+        try:
+            with KrakenConnection(self.key, self.secret) as k:
+                result = k.query_private('QueryOrders', request)
+        except:
+            raise
+
+        if result['error']:
+            raise KrakenError(request, result['error'])
+
+        return [Order(x, **result['result'][x]) for x in result['result']]
+
+    def add_order(self, pair, direction, order_type, volume, price=0, price2=0,
+                  leverage='none', flags=[''], validate=False):
+        """
+        Add an order to the order book.
+
+        Parameters
+        ----------
+        pair : str
+            Asset pair.
+        direction : str
+            Direction of the order, can be 'buy' or 'sell'.
+        order_type : str
+            Type of the order, can be:
+
+            market
+            limit (price = limit price)
+            stop-loss (price = stop loss price)
+            take-profit (price = take profit price)
+            stop-loss-profit (price = stop loss price, price2 = take profit price)
+            stop-loss-and-limit (price = stop loss price, price2 = limit price)
+            trailing-stop (price = trailing stop offset)
+
+        volume : float
+            Number of lots in the quote currency.
+
+        price : float
+            Main price of the order.
+
+        price2 : float
+            Secondary price of the order.
+
+        leverage : str
+            Margin to be used in the order.
+
+        flags : list
+            List of flags to be included in the order, can be:
+
+            viqc = volume in quote currency (not available for leveraged orders)
+            fcib = prefer fee in base currency
+            fciq = prefer fee in quote currency
+            nompp = no market price protection
+            post = post only order (available when ordertype = limit)
+
+        validate : str
+            Flag used to only validate the order, and not add it to the book.
+
+        Returns
+        -------
+        :obj:`OrderRequest`
+            `OrderRequest` object containing the request data.
+        """
+
+        request = {
+            'pair': pair,
+            'type': direction,
+            'ordertype': order_type,
+            'volume': volume,
+            'price': price,
+            'price2': price2,
+            'leverage': leverage,
+            'flags': flags,
+        }
+
+        if validate:
+            request['validate'] = 'yes'
+
+        try:
+            with KrakenConnection(self.key, self.secret) as k:
+                result = k.query_private('AddOrder', request)
+        except:
+            raise
+
+        if result['error']:
+            raise KrakenError(request, result['error'])
+
+        if validate:
+            return OrderRequest(None, result['result']['descr']['order'])
+
+        return OrderRequest(result['result']['txid'], result['result']['descr']['order'])

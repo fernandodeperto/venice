@@ -18,12 +18,11 @@ NONCE_MULTIPLIER = 1000
 
 
 class KrakenConnection:
-    def __init__(self, key, secret, url='api.kraken.com', version='0'):
+    def __init__(self, key='', secret='', url='api.kraken.com', version='0'):
         self.key = key
         self.secret = secret
         self.url = url
         self.version = version
-        self.connection = None
 
         self.headers = {
             'User-Agent': 'krakenapi/0.9'
@@ -64,12 +63,11 @@ class KrakenConnection:
         logger.debug(request)
 
         data = urllib.parse.urlencode(request)
-
         headers.update(self.headers)
 
         self.connection.request('POST', path, data, headers)
-        response = self.connection.getresponse()
 
+        response = self.connection.getresponse()
         result = json.loads(response.read().decode())
 
         logger.debug(result)
