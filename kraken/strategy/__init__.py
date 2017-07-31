@@ -71,25 +71,3 @@ def load_modules(module_names):
                 classes.append(KrakenStrategyTuple(module_name, name, value))
 
     return classes
-
-
-def find_modules():
-    """
-    Find all the modules available on the current directory.
-    """
-    current_dir = dirname(__file__)
-    module_files = [f for f in listdir(current_dir) if isfile(join(current_dir, f))]
-    return [splitext(f)[0] for f in module_files if f != '__init__.py']
-
-
-def find_classes():
-    classes = []
-
-    for module_file in find_modules():
-        module = importlib.import_module('.'.join([__name__, module_file]))
-
-        for name, value in inspect.getmembers(module, inspect.isclass):
-            if issubclass(value, KrakenStrategy) and value != KrakenStrategy:
-                classes.append((module_file, name, value))
-
-    return classes
