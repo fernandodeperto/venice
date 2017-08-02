@@ -12,10 +12,3 @@ class Momentum(KrakenStrategy):
         ohlc = k.get_ohlc(self.pair, self.interval)
         print(ohlc)
         # momentum = mom(
-
-
-def main():
-    momentum = Momentum('XETHZEUR', 15)
-
-if __name__ == "__main__":
-    main()

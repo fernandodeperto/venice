@@ -40,12 +40,9 @@ def main():
 
     signal.signal(signal.SIGINT, signal_handler)
 
-    classes = load_modules(args.strategy)
-    strategies = [x.value(args.pair, args.interval) for x in classes]
+    strategies = [x.value(args.pair, args.interval) for x in load_modules(args.strategy)]
 
     #TODO convert interval to the right format
-
-    #TODO get historic ohlc data
 
     sys.exit()
 

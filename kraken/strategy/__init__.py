@@ -17,7 +17,6 @@ class KrakenStrategy(metaclass=ABCMeta):
         config = ConfigParser()
         config.read(expanduser('~') + '/.krakenst.conf')
 
-
         module_name = self.__module__.split('.')[-1]
         return config[module_name]
 
