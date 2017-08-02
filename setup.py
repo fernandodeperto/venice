@@ -83,7 +83,7 @@ setup(
     entry_points={
         'console_scripts': [
             'krakencli=krakencli:main',
-            'krakenst=kraken.strategy:main',
+            'krakenst=kraken.strategy.krakenst:main',
         ],
     },
 

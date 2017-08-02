@@ -2,6 +2,9 @@
 Golden cross strategy.
 """
 from kraken.strategy import KrakenStrategy
+from kraken.indicator import sma
+
+import kraken.api as api
 
 
 class GoldenCross(KrakenStrategy):
@@ -12,5 +15,5 @@ class GoldenCross(KrakenStrategy):
         self.fast_sma = config['fast_sma']
         self.slow_sma = config['slow_sma']
 
-    def get_position(self, ohlc, ticker):
+    def run(self):
         pass
