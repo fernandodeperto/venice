@@ -1,23 +1,13 @@
-"""
-Main Kraken API class and helper classes.
-"""
-
 from .connection import KrakenConnection
 
 NONCE_MULTIPLIER = 1000
 
 
 class KrakenError(Exception):
-    """
-    Main Kraken response error.
-    """
     pass
 
 
 class OrderRequest:
-    """
-    Order request data class.
-    """
     def __init__(self, txids, descr):
         self.txids = txids
         self.descr = descr
@@ -27,9 +17,6 @@ class OrderRequest:
 
 
 class Order:
-    """
-    Order data class.
-    """
     def __init__(self, txid, closetm, cost, descr, expiretm, fee, misc, oflags,
                  opentm, price, reason, refid, starttm, userref, vol, vol_exec,
                  status=None, stopprice=None):
@@ -60,9 +47,6 @@ class Order:
 
 
 class OrderInfo:
-    """
-    Order info class.
-    """
     def __init__(self, pair, type, ordertype, price, price2, leverage,
                  order, close=None):
         """
@@ -108,18 +92,15 @@ class OrderInfo:
 
 
 class OHLC:
-    """
-    OHLC data class.
-    """
     def __init__(self, time, open, high, low, close, vwap, volume, count):
         self.time = time
-        self.open = open
-        self.high = high
-        self.low = low
-        self.close = close
-        self.vwap = vwap
-        self.volume = volume
-        self.count = count
+        self.open = float(open)
+        self.high = float(high)
+        self.low = float(low)
+        self.close = float(close)
+        self.vwap = float(vwap)
+        self.volume = float(volume)
+        self.count = int(count)
 
     def __str__(self):
         return '{} O:{}, H:{}, L:{}, C:{}, V:{}'.format(
@@ -127,9 +108,6 @@ class OHLC:
 
 
 class Ticker:
-    """
-    Ticker data class.
-    """
     def __init__(self, pair, a, b, c):
         """
         a = ask array(<price>, <whole lot volume>, <lot volume>),
@@ -143,9 +121,9 @@ class Ticker:
         o = today's opening price
         """
         self.pair = pair
-        self.ask = a[0]
-        self.bid = b[0]
-        self.last_price = c[0]
+        self.ask = float(a[0])
+        self.bid = float(b[0])
+        self.last_price = float(c[0])
 
     def __str__(self):
         return '{} ask: {}, bid: {}, last_price: {}'.format(
@@ -153,17 +131,11 @@ class Ticker:
 
 
 class Balance:
-    """
-    Balance class.
-    """
     def __init__(self, pairs):
         self.pairs = pairs
 
 
 class Position:
-    """
-    Position class.
-    """
     def __init__(self, posid, ordertxid, pair, time, type, ordertype, cost, fee, vol, vol_closed,
                  margin, value, net, misc, oflags, rollovertm, terms, posstatus):
         """
@@ -208,9 +180,6 @@ class Position:
 
 
 class AssetInfo:
-    """
-    Asset info class.
-    """
     def __init__(self, asset, display_decimals, altname, aclass, decimals):
         self.asset = asset
         self.display_decimals = display_decimals
@@ -223,26 +192,17 @@ class AssetInfo:
 
 
 class KrakenAPI:
-    """
-    Kraken API class.
-    """
     def __init__(self, key='', secret=''):
         self.key = key
         self.secret = secret
 
     def load_key(self, path):
-        """
-        Load key and secret from file.
-        """
         with open(path, 'r') as key_file:
             self.key = key_file.readline().strip()
             self.secret = key_file.readline().strip()
 
     @staticmethod
     def get_server_time():
-        """
-        Get server time.
-        """
         try:
             with KrakenConnection() as k:
                 result = k.query_public('Time')
@@ -254,9 +214,6 @@ class KrakenAPI:
 
     @staticmethod
     def get_assets_info(assets):
-        """
-        Get assets info.
-        """
         request = {'asset': ','.join(assets)}
 
         try:
@@ -299,9 +256,6 @@ class KrakenAPI:
 
     @staticmethod
     def get_ohlc(pair, interval, since=None):
-        """
-        Get OHLC data.
-        """
         request = {'pair': pair, 'interval': interval}
 
         if since:
@@ -319,9 +273,6 @@ class KrakenAPI:
         return [OHLC(*x) for x in result['result'][pair]]
 
     def get_balance(self):
-        """
-        Get balance.
-        """
         try:
             with KrakenConnection(self.key, self.secret) as k:
                 result = k.query_private('Balance')
@@ -334,9 +285,6 @@ class KrakenAPI:
         return Balance(result['result'])
 
     def get_positions(self):
-        """
-        Get open positions.
-        """
 
         try:
             with KrakenConnection(self.key, self.secret) as k:
@@ -350,10 +298,6 @@ class KrakenAPI:
         return [Position(x, **result['result'][x]) for x in result['result']]
 
     def get_open_orders(self):
-        """
-        Get open orders.
-        """
-
         try:
             with KrakenConnection(self.key, self.secret) as k:
                 result = k.query_private('OpenOrders')

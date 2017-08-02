@@ -1,15 +1,8 @@
-"""
-Module with the different indicador implementations.
-"""
-
 import statistics
 import sys
 
 
 def sma(source, length):
-    """
-    Simple moving average.
-    """
     series = []
 
     for i in range(0, len(source)):
@@ -20,9 +13,6 @@ def sma(source, length):
 
 
 def mom(source, length):
-    """
-    Momentum.
-    """
     series = []
 
     for i in range(0, len(source)):
@@ -33,9 +23,6 @@ def mom(source, length):
 
 
 def rsi(source, length):
-    """
-    Relative strengh index.
-    """
     change = [0] + [source[x] - source[x - 1] for x in range(1, len(source))]
 
     gain = [abs(x) if x > sys.float_info.epsilon else 0 for x in change]

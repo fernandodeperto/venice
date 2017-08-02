@@ -44,8 +44,6 @@ def main():
 
     #TODO convert interval to the right format
 
-    sys.exit()
-
     while run:
         start_time = time.time()
 
@@ -53,7 +51,10 @@ def main():
 
         #TODO update ohlc and ticker data
 
-        #TODO run all strategies
+        entries = [x.run() for x in strategies]
+        print(entries)
+        sys.exit()
+
         #TODO check strategies' answers
 
         #TODO decide position based on the answers
