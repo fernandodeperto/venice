@@ -93,7 +93,7 @@ class OrderInfo:
 
 class OHLC:
     def __init__(self, time, open, high, low, close, vwap, volume, count):
-        self.time = time
+        self.time = int(time)
         self.open = float(open)
         self.high = float(high)
         self.low = float(low)
@@ -211,6 +211,8 @@ class KrakenAPI:
 
         if result['error']:
             raise KrakenError(result['error'])
+
+        return result['result']['unixtime']
 
     @staticmethod
     def get_assets_info(assets):
