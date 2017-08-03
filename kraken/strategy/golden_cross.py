@@ -1,6 +1,6 @@
-import kraken
 from kraken.strategy import KrakenStrategy
 from kraken.indicator import sma
+from kraken.strategy.api import KrakenStrategyAPI
 
 
 class GoldenCross(KrakenStrategy):
@@ -9,7 +9,7 @@ class GoldenCross(KrakenStrategy):
         self.slow_sma = int(config['slow_sma'])
 
     def run(self):
-        k = kraken.KrakenAPI()
+        k = KrakenStrategyAPI()
 
         ohlc = k.get_ohlc(self.pair, self.interval)
         close = [x.close for x in ohlc]
@@ -17,4 +17,6 @@ class GoldenCross(KrakenStrategy):
         fast_sma = sma(close, self.fast_sma)
         slow_sma = sma(close, self.slow_sma)
 
-        return KrakenStrategy.LONG if fast_sma > slow_sma else KrakenStrategy.SHORT
+        print('sma: {:.2f} {:.2f}'.format(fast_sma[-1], slow_sma[-1]))
+
+        return KrakenStrategy.LONG if fast_sma[1] > slow_sma[-1] else KrakenStrategy.SHORT

@@ -16,7 +16,9 @@ class Momentum(KrakenStrategy):
         momentum = mom(close, self.length)
         momentum2 = mom(momentum, 1)
 
-        if momentum[-1] > 0 and momentum2[-1] > 2:
+        print('momentum: {:.2f} {:.2f}'.format(momentum[-1], momentum2[-1]))
+
+        if momentum[-1] > 0 and momentum2[-1] > 0:
             return KrakenStrategy.LONG
         elif momentum[-1] < 0 and momentum2[-1] < 0:
             return KrakenStrategy.SHORT

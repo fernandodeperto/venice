@@ -16,6 +16,7 @@ from argcomplete import autocomplete
 # pylint: disable=too-few-public-methods
 
 from kraken.strategy import KrakenStrategy
+from kraken.strategy.api import KrakenStrategyAPI
 
 KrakenStrategyModule = namedtuple('KrakenStrategyModule', 'module_name class_name value')
 
@@ -52,12 +53,13 @@ def main():
         #TODO update ohlc and ticker data
 
         entries = [x.run() for x in strategies]
+
         print(entries)
         sys.exit()
 
-        #TODO check strategies' answers
+        # position = choose_position(entries)
 
-        #TODO decide position based on the answers
+        # place_order(position)
 
         time.sleep(int(args.refresh) - (time.time() - start_time))
 
@@ -75,3 +77,16 @@ def load_modules(module_names):
                 classes.append(KrakenStrategyModule(module_name, name, value))
 
     return classes
+
+
+def choose_position(entries):
+    pass
+
+
+def place_order(position):
+    pass
+
+
+def confirm_order():
+    pass
+

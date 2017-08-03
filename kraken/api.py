@@ -256,6 +256,28 @@ class KrakenAPI:
 
     @staticmethod
     def get_ohlc(pair, interval, since=None):
+        """
+        Get OHLC data.
+
+        Parameters
+        ----------
+
+        pair : str
+            Asset pair.
+
+        interval : int
+            Interval in minutes.
+
+            Allowed values: 1 (default), 5, 15, 30, 60, 240, 1440, 10080, 21600
+
+        since : int
+            Timestamp of the first candle to be included.
+
+        Returns
+        -------
+        list
+            List of :obj:`OHLC` objects containing the OHL data.
+        """
         request = {'pair': pair, 'interval': interval}
 
         if since:
