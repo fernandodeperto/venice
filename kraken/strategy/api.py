@@ -1,34 +1,34 @@
-import sys
-
-from kraken.api import *
+from kraken.api import KrakenAPI
 
 
 class KrakenStrategyAPI(KrakenAPI):
-    _MIN_REFRESH_TIME = 15
+    def __init__(self, live=False):
+        super().__init__()
 
-    _ohlc = {}
+        self.live = live
+        self.ohlc = {}
 
     def get_ohlc(self, pair, interval, since=None):
-        key = '-'.join([pair, interval])
-        time = KrakenAPI.get_server_time()
+        key = '-'.join([pair, str(interval)])
+        time = self.get_server_time()
 
-        if (key in KrakenStrategyAPI._ohlc and
-                KrakenStrategyAPI._ohlc[key][-1].time < time + self._MIN_REFRESH_TIME):
-            return KrakenStrategyAPI._ohlc[key]
+        if key in self.ohlc:
+            time_next = self.ohlc[key][-1].time + interval * 60
 
-        # Just update the last candle and return
-        if key in KrakenStrategyAPI._ohlc:
-            time_next = KrakenStrategyAPI._ohlc[key][-2].time + interval
-
+            # Just update the last candle
             if time < time_next:
-                KrakenStrategyAPI._ohlc[key][-1] = KrakenAPI.get_ohlc(pair, interval, since=time)
+                ohlc = super().get_ohlc(pair, interval, since=time)
+                self.ohlc[key][-1] = ohlc[0]
+
+            # Update the previous candle and add the new one
             else:
-                ohlc = KrakenAPI.get_ohlc(pair, interval, since=time_next)
+                ohlc = super().get_ohlc(pair, interval, since=time_next)
 
-                KrakenStrategyAPI._ohlc[key][-1] = ohlc[0]
-                KrakenStrategyAPI._ohlc[key].append(ohlc[1])
+                self.ohlc[key][-1] = ohlc[0]
+                self.ohlc[key].append(ohlc[1])
 
+        # Get new data
         else:
-            KrakenStrategyAPI._ohlc[key] = KrakenAPI.get_ohlc(pair, interval)
+            self.ohlc[key] = super().get_ohlc(pair, interval)
 
-        return KrakenStrategyAPI._ohlc[key]
+        return self.ohlc[key]

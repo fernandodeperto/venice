@@ -3,23 +3,13 @@ import sys
 
 
 def sma(source, length):
-    series = []
-
-    for i in range(0, len(source)):
-        first = i - length + 1 if i >= length else 0
-        series.append(statistics.mean(source[first:i + 1]))
-
-    return series
+    return [statistics.mean(source[x - length + 1:x + 1]) if x >= length else
+            statistics.mean(source[0:x + 1]) for x in range(0, len(source))]
 
 
 def mom(source, length):
-    series = []
-
-    for i in range(0, len(source)):
-        first = i - length if i >= length else 0
-        series.append(source[i] - source[first])
-
-    return series
+    return [source[x] - source[x - length] if x >= length else source[x] - source[0] for x in
+            range(0, len(source))]
 
 
 def rsi(source, length):
@@ -39,3 +29,17 @@ def rsi(source, length):
                     range(0, len(avg_gain))]
 
     return [100 - (100/(1 + rel_strength[x])) for x in range(0, len(rel_strength))]
+
+
+def crossover(source, source2):
+    if isinstance(source2, list):
+        return source[-2] <= source2[-2] and source[-1] > source2[-1]
+
+    return source[-2] <= source2 and source[-1] > source2
+
+
+def crossunder(source, source2):
+    if isinstance(source2, list):
+        return source[-2] >= source2[-2] and source[-1] < source2[-1]
+
+    return source[-2] >= source2 and source[-1] < source2

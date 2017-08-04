@@ -201,6 +201,8 @@ class KrakenAPI:
             self.key = key_file.readline().strip()
             self.secret = key_file.readline().strip()
 
+    # Public data
+
     @staticmethod
     def get_server_time():
         try:
@@ -295,6 +297,8 @@ class KrakenAPI:
             raise KrakenError(request, result['error'])
 
         return [OHLC(*x) for x in result['result'][pair]]
+
+    # Private data
 
     def get_balance(self):
         try:

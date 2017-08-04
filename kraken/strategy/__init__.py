@@ -1,29 +1,31 @@
 import sys
+import os.path
+import configparser
+import abc
 
-from os.path import expanduser
-from configparser import ConfigParser
-from abc import ABCMeta, abstractmethod
+from kraken.strategy.api import KrakenStrategyAPI
 
-class KrakenStrategy(metaclass=ABCMeta):
-    SHORT, NEUTRAL, LONG = (-1, 0, 1)
-
-    def __init__(self, pair, interval):
+class KrakenStrategy(metaclass=abc.ABCMeta):
+    def __init__(self, pair, interval, live=False):
         self.pair = pair
         self.interval = interval
+        self.live = live
+
+        self.k = KrakenStrategyAPI()
 
         self.parse_config(self.get_config())
 
     def get_config(self):
-        config = ConfigParser()
-        config.read(expanduser('~') + '/.krakenst.conf')
+        config = configparser.ConfigParser()
+        config.read(os.path.expanduser('~') + '/.krakenst.conf')
 
         module_name = self.__module__.split('.')[-1]
         return config[module_name]
 
-    @abstractmethod
+    @abc.abstractmethod
     def parse_config(self, config):
         pass
 
-    @abstractmethod
+    @abc.abstractmethod
     def run(self):
         pass

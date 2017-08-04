@@ -1,92 +1,77 @@
-import importlib
-import inspect
-import sys
-import signal
-
-import time
-
-from collections import namedtuple
-
-from argparse import ArgumentParser
-from argcomplete import autocomplete
-
-# from kraken.strategy import KrakenStrategy
-
 # pylint: disable=invalid-name
 # pylint: disable=too-few-public-methods
 
-from kraken.strategy import KrakenStrategy
-from kraken.strategy.api import KrakenStrategyAPI
+import importlib
+import inspect
+import signal
+import time
+import collections
+import argparse
 
-KrakenStrategyModule = namedtuple('KrakenStrategyModule', 'module_name class_name value')
+import argcomplete
+
+from kraken.strategy import KrakenStrategy
+
+KrakenStrategyModule = collections.namedtuple('KrakenStrategyModule', 'module_name class_name value')
 
 
 def main():
-    parser = ArgumentParser(description='run a bot that uses strategies to decide when to enter and close positions')
+    def signal_handler(sig, frame):
+        nonlocal run
+        run = 0
+
+    parser = argparse.ArgumentParser(description='run a bot that uses strategies to decide when to enter and close positions')
     parser.add_argument('pair', help='asset pair')
     parser.add_argument('volume', type=float, help='main currency volume')
     parser.add_argument('volume2', type=float, help='quote currency volume')
     parser.add_argument('interval', help='candle interval')
-    parser.add_argument('refresh', help='time between updates')
-    parser.add_argument('strategy', nargs='+', help='list of strategies')
+    parser.add_argument('refresh', type=int, help='time between updates')
+    parser.add_argument('strategy', help='trading strategy')
 
-    autocomplete(parser)
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
     run = 1
-
-    def signal_handler(signal, frame):
-        nonlocal run
-        run = 0
-
     signal.signal(signal.SIGINT, signal_handler)
 
-    strategies = [x.value(args.pair, args.interval) for x in load_modules(args.strategy)]
+    interval = parse_interval(args.interval)
 
-    #TODO convert interval to the right format
+    if not interval:
+        raise ValueError('invalid interval', args.interval)
+
+    strategy = load_module(args.strategy).value(args.pair, interval)
 
     while run:
         start_time = time.time()
 
-        #TODO confirm pending orders
+        strategy.run()
 
-        #TODO update ohlc and ticker data
-
-        entries = [x.run() for x in strategies]
-
-        print(entries)
-        sys.exit()
-
-        # position = choose_position(entries)
-
-        # place_order(position)
-
-        time.sleep(int(args.refresh) - (time.time() - start_time))
+        sleep_time = args.refresh - (time.time() - start_time)
+        if sleep_time > 0:
+            time.sleep(sleep_time)
 
 
-def load_modules(module_names):
-    classes = []
+def load_module(module_name):
     parent_modules = __name__.split('.')
+    module_name = '.'.join(parent_modules[0:len(parent_modules) - 1] + [module_name])
 
-    for module_name in module_names:
-        module = importlib.import_module(
-            '.'.join(parent_modules[0:len(parent_modules) - 1] + [module_name]))
+    module = importlib.import_module(module_name)
 
-        for name, value in inspect.getmembers(module, inspect.isclass):
-            if issubclass(value, KrakenStrategy) and value != KrakenStrategy:
-                classes.append(KrakenStrategyModule(module_name, name, value))
+    classes = []
+    for name, value in inspect.getmembers(module, inspect.isclass):
+        if issubclass(value, KrakenStrategy) and value != KrakenStrategy:
+            classes.append(KrakenStrategyModule(module_name, name, value))
 
-    return classes
+    if len(classes) > 1:
+        raise ValueError('module {} has more than one valid class'.format(module_name))
 
-
-def choose_position(entries):
-    pass
-
-
-def place_order(position):
-    pass
+    return classes[0]
 
 
-def confirm_order():
-    pass
+def parse_interval(interval):
+    keys = {
+        '1': 1, '5': 5, '15': 15, '30': 30, '60': 60, '240': 240,
+        '1H': 60, '4H': 240}
 
+    if interval in keys:
+        return keys[interval]
