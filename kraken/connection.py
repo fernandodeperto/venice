@@ -12,7 +12,6 @@ import urllib.parse
 import urllib.error
 
 import logging
-import logging.config
 
 NONCE_MULTIPLIER = 1000
 
@@ -60,7 +59,7 @@ class KrakenConnection:
     def _query(self, path, request={}, headers={}):
         logger = logging.getLogger('krakenapi')
 
-        logger.debug(request)
+        logger.debug('%s: %s', path, request)
 
         data = urllib.parse.urlencode(request)
         headers.update(self.headers)

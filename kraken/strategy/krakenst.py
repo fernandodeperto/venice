@@ -1,5 +1,6 @@
 # pylint: disable=invalid-name
 # pylint: disable=too-few-public-methods
+# pylint: disable=missing-docstring
 
 import importlib
 import inspect
@@ -7,12 +8,17 @@ import signal
 import time
 import collections
 import argparse
+# import sys
+import logging
+import logging.config
 
 import argcomplete
 
 from kraken.strategy import KrakenStrategy
 
-KrakenStrategyModule = collections.namedtuple('KrakenStrategyModule', 'module_name class_name value')
+KrakenStrategyModule = collections.namedtuple(
+    'KrakenStrategyModule',
+    'module_name class_name value')
 
 
 def main():
@@ -20,8 +26,9 @@ def main():
         nonlocal run
         run = 0
 
-    parser = argparse.ArgumentParser(description='run a bot that uses strategies to decide when to enter and close positions')
+    parser = argparse.ArgumentParser(description='bot based on a strategy')
     parser.add_argument('pair', help='asset pair')
+    parser.add_argument('-l', '--live', action='store_true', help="enable trade mode")
     parser.add_argument('volume', type=float, help='main currency volume')
     parser.add_argument('volume2', type=float, help='quote currency volume')
     parser.add_argument('interval', help='candle interval')
@@ -31,6 +38,9 @@ def main():
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
+    logging.config.fileConfig('logging.conf')
+    logger = logging.getLogger('root')
+
     run = 1
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -39,10 +49,12 @@ def main():
     if not interval:
         raise ValueError('invalid interval', args.interval)
 
-    strategy = load_module(args.strategy).value(args.pair, interval)
+    strategy = load_module(args.strategy).value(args.pair, interval, args.live)
 
     while run:
         start_time = time.time()
+
+        logger.debug('running')
 
         strategy.run()
 
