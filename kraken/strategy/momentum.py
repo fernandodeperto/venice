@@ -1,7 +1,8 @@
 import logging
 
-from kraken.strategy import KrakenStrategy
-from kraken.indicator import mom
+from kraken.strategy import mom
+
+from . import KrakenStrategy
 
 
 class Momentum(KrakenStrategy):
@@ -16,4 +17,4 @@ class Momentum(KrakenStrategy):
 
         momentum = mom(close, self.length)
 
-        logger.info('momentum: %.3f', momentum[-1])
+        logger.debug('momentum: %.3f', momentum[-1])
