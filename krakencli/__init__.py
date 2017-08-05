@@ -68,6 +68,11 @@ def main():
     parser_balance = parser_cmd.add_parser('balance', aliases=['b', 'bal'], help='get account balance')
     parser_balance.set_defaults(func=balance)
 
+    parser_trade_balance = parser_cmd.add_parser('trade', help='get trade balance')
+    parser_trade_balance.set_defaults(func=trade_balance)
+    parser_trade_balance.add_argument('-p', '--pair', choices=['XETHZEUR', 'XLTCZEUR', 'XXBTZEUR', 'XETHXXBT'], help='asset pair')
+    parser_trade_balance.add_argument('-b', '--base_asset', choices=['ZUSD', 'ZEUR'], help='base asset')
+
     parser_open = parser_cmd.add_parser('open', help='get open orders')
     parser_open.set_defaults(func=open)
 
@@ -233,6 +238,18 @@ def closed(args):
             'txid', 'status', 'vol', 'vol_exec', 'direction', 'order_type',
             'pair', 'leverage', 'price', 'price2'],
         floatfmt='.{}g'.format(MAXIMUM_PRECISION)))
+
+
+def trade_balance(args):
+    k = krakencli.Krakencli(os.path.expanduser('~' + '/.kraken.key'))
+
+    tb = k.get_trade_balance()
+
+    print(tabulate.tabulate([
+        [tb.equivalent_balance, tb.trade_balance, tb.margin_amount, tb.unrealized_net,
+         tb.cost_basis, tb.current_valuation, tb.equity, tb.free_margin, tb.margin_level]],
+        headers=['e_balance', 't_balance', 'm_amount', 'u_net', 'c_basis', 'c_val', 'equity',
+                 'f_margin', 'm_level'], floatfmt='.{}g'.format(MAXIMUM_PRECISION)))
 
 
 def position(args):

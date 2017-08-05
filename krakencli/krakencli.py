@@ -157,6 +157,30 @@ class Position:
         return self.position_id
 
 
+class TradeBalance:
+    """
+    eb = equivalent balance (combined balance of all currencies)
+    tb = trade balance (combined balance of all equity currencies)
+    m = margin amount of open positions
+    n = unrealized net profit/loss of open positions
+    c = cost basis of open positions
+    v = current floating valuation of open positions
+    e = equity = trade balance + unrealized net profit/loss
+    mf = free margin = equity - initial margin (maximum margin available to open new positions)
+    ml = margin level = (equity / initial margin) * 100
+    """
+    def __init__(self, eb, tb, m, n, c, v, e, mf, ml=None):
+        self.equivalent_balance = eb
+        self.trade_balance = tb
+        self.margin_amount = m
+        self.unrealized_net = n
+        self.cost_basis = c
+        self.current_valuation = v
+        self.equity = e
+        self.free_margin = mf
+        self.margin_level = ml
+
+
 class Krakencli:
     def __init__(self, key_file):
         """
@@ -560,13 +584,28 @@ class Krakencli:
 
         try:
             result = self.k.query_public('Time')
-        except Exception as e:
+        except Exception:
             raise
 
         if result['error']:
             raise KrakenError(result['error'])
 
         return result['result']['unixtime']
+
+    def get_trade_balance(self, pair=None, base_asset='ZEUR'):
+        request = {'asset': base_asset}
+
+        if pair:
+            request['aclass'] = pair
+        try:
+            result = self.k.query_private('TradeBalance', request)
+        except Exception:
+            raise
+
+        if result['error']:
+            raise KrakenError(result['error'])
+
+        return TradeBalance(**result['result'])
 
     def connect(self):
         """
