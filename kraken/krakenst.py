@@ -8,7 +8,7 @@ import signal
 import time
 import collections
 import argparse
-# import sys
+import sys
 import logging
 import logging.config
 
@@ -65,7 +65,8 @@ def main():
 
 def load_module(module_name):
     parent_modules = __name__.split('.')
-    module_name = '.'.join(parent_modules[0:len(parent_modules) - 1] + [module_name])
+    module_name = '.'.join(parent_modules[0:len(parent_modules) - 1] +
+                           ['strategy', module_name])
 
     module = importlib.import_module(module_name)
 

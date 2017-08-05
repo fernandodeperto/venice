@@ -3,6 +3,8 @@ import configparser
 import abc
 import logging
 
+from kraken.api import KrakenAPI
+
 
 class KrakenStrategyAPI(KrakenAPI):
     def __init__(self, live=False):
@@ -12,20 +14,17 @@ class KrakenStrategyAPI(KrakenAPI):
         self.ohlc = {}
 
     def get_ohlc(self, pair, interval, since=None):
-        logger = logging.getLogger('strategy_api')
+        logger = logging.getLogger(__name__)
 
         key = '-'.join([pair, str(interval)])
 
         time = self.get_server_time()
-        logger.debug('current time: %s', time)
 
         if key in self.ohlc:
             time_next = self.ohlc[key][-1].time + interval * 60
-            logger.debug('next time: %s', time_next)
-
             # Just update the last candle
             if time < time_next:
-                logger.debug('just update')
+                logger.debug('just update, next in %d', time_next - time)
 
                 ohlc = super().get_ohlc(pair, interval, since=time)
                 self.ohlc[key][-1] = ohlc[0]
@@ -46,6 +45,17 @@ class KrakenStrategyAPI(KrakenAPI):
             self.ohlc[key] = super().get_ohlc(pair, interval)
 
         return self.ohlc[key]
+
+    def update_entries(self):
+        pass
+
+    def add_entry(self, name, direction, order_type, price=0, price2=0):
+        logger = logging.getLogger(__name__)
+        logger.info('New entry %s: %s %s @ %.3f %.3f', name, direction, order_type, price, price2)
+
+    def cancel_entry(self, name):
+        logger = logging.getLogger(__name__)
+        logger.info('Cancel entry %s', name)
 
 
 class KrakenStrategy(metaclass=abc.ABCMeta):

@@ -27,7 +27,8 @@ def main():
     parser_order.set_defaults(func=order)
     parser_order.add_argument('-q', '--quote', action='store_true', help='convert volume to quote currency')
     parser_order.add_argument('-n', '--validate', action='store_true', help='do not place order, just validate arguments')
-    parser_order.add_argument('pair', choices=['XETHZEUR', 'XLTCZEUR', 'XXBTZEUR', 'XETHXXBT'], help='asset pair')
+    parser_order.add_argument('pair', choices=['XETHZEUR', 'XLTCZEUR', 'XXBTZEUR', 'XETHXXBT',
+                                               'XETHZUSD'], help='asset pair')
     parser_order.add_argument('direction', choices=['buy', 'sell'], help='order direction')
     parser_order.add_argument('leverage', choices=['none', '2', '3', '4', '5'], help='leverage level')
     parser_order.add_argument('volume', help='order volume')
@@ -190,7 +191,7 @@ def balance(args):
 
     result = k.get_balance()
 
-    costs = {x: result.pairs[x] * k.get_price('{}ZEUR'.format(x)) if x != 'ZEUR' else None for x in result.pairs}
+    costs = {x: result.pairs[x] * k.get_price('{}ZEUR'.format(x)) if x != 'ZEUR' and x != 'ZUSD' else None for x in result.pairs}
 
     pairs = [[x, result.pairs[x], costs[x]] for x in result.pairs]
     pairs = sorted(pairs, key=balance_get_key)
