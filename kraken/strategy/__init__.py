@@ -1,12 +1,22 @@
+import sys
 import os.path
 import configparser
 import abc
 import logging
 
+from collections import namedtuple
+
 from kraken.api import KrakenAPI
+
+KrakenStrategyEntry = namedtuple(
+    'KrakenStrategyEntry',
+    'direction order_type price price2 txid')
 
 
 class KrakenStrategyAPI(KrakenAPI):
+    pending_entries = {}
+    confirmed_entries = {}
+
     def __init__(self, live=False):
         super().__init__()
 
@@ -51,11 +61,39 @@ class KrakenStrategyAPI(KrakenAPI):
 
     def add_entry(self, name, direction, order_type, price=0, price2=0):
         logger = logging.getLogger(__name__)
-        logger.info('New entry %s: %s %s @ %.3f %.3f', name, direction, order_type, price, price2)
+
+        entry = KrakenStrategyEntry(direction, order_type, price, price2, None)
+
+        if name in self.__class__.pending_entries:
+            logger.info('Update entry %s: %s %s @ %.3f %.3f', name, direction, order_type,
+                        price, price2)
+            self._update_entry(name, entry)
+
+        elif name in self.__class__.confirmed_entries:
+            logger.info('Entry %s already confirmed', name)
+
+        else:
+            logger.info('New entry %s: %s %s @ %.3f %.3f', name, direction, order_type, price,
+                        price2)
+            self._add_entry(name, entry)
 
     def cancel_entry(self, name):
         logger = logging.getLogger(__name__)
-        logger.info('Cancel entry %s', name)
+
+        if name in self.__class__.pending_entries:
+            logger.info('Cancel pending entry %s', name)
+
+        elif name in self.__class__.confirmed_entries:
+            logger.info('Cancel confirmed entry %s', name)
+
+        else:
+            logger.info('Entry %s not found', name)
+
+    def _update_entry(self, name, entry):
+        pass
+
+    def _add_entry(self, name, entry):
+        pass
 
 
 class KrakenStrategy(metaclass=abc.ABCMeta):
