@@ -466,3 +466,24 @@ class KrakenAPI:
             return OrderRequest(None, result['result']['descr']['order'])
 
         return OrderRequest(result['result']['txid'], result['result']['descr']['order'])
+
+    def cancel_order(self, order_id):
+        """
+        Cancel order from the order book.
+
+        Parameters
+        ----------
+        order_id : str
+            Id of the order to be canceled.
+        """
+
+        request = {'txid': order_id}
+
+        try:
+            with KrakenConnection(self.key, self.secret) as k:
+                result = k.query_private('CancelOrder', request)
+        except:
+            raise
+
+        if result['error']:
+            raise KrakenError(request, result['error'])

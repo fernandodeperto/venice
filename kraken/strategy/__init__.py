@@ -1,8 +1,11 @@
-import sys
+# import sys
 import os.path
 import configparser
 import abc
 import logging
+
+import smtplib
+from email.mime.text import MIMEText
 
 from collections import namedtuple
 
@@ -10,100 +13,131 @@ from kraken.api import KrakenAPI
 
 KrakenStrategyEntry = namedtuple(
     'KrakenStrategyEntry',
-    'direction order_type price price2 txid')
+    'direction order_type price price2 txid status')
+
+KrakenStrategyEmailConfig = namedtuple(
+    'KrakenStrategyEmailConfig',
+    'enable fr to server port username password')
 
 
 class KrakenStrategyAPI(KrakenAPI):
-    pending_entries = {}
-    confirmed_entries = {}
+    api = None
 
-    def __init__(self, live=False):
+    def __init__(self, pair, volume, volume2, interval):
         super().__init__()
 
-        self.live = live
-        self.ohlc = {}
+        self.pair = pair
+        self.volume = volume
+        self.volume2 = volume2
+        self.interval = interval
 
-    def get_ohlc(self, pair, interval, since=None):
+        self.ohlc = []
+        self.order = None
+
+        config = configparser.ConfigParser()
+        config.read(os.path.expanduser('~') + '/.krakenst.conf')
+
+        self.email = self._parse_email_config(**config['email'])
+
+        self.__class__.api = self
+
+    @staticmethod
+    def _parse_email_config(enable, fr, to, server, port, username, password):
+        return KrakenStrategyEmailConfig(enable, fr, to, server, port, username, password)
+
+    def _send_email(self, subject='', message=''):
+        if self.email.enable is 'true':
+            with smtplib.SMTP(self.email.server, port=self.email.port) as smtp_server:
+                msg = MIMEText(message)
+                msg['Subject'] = subject
+                msg['From'] = 'fernando@mendonca.xyz'
+                msg['To'] = 'fernando@mendonca.xyz'
+
+                smtp_server.starttls()
+                smtp_server.login(self.email.username, self.email.password)
+                smtp_server.send_message(msg)
+
+    def get_ohlc(self):
         logger = logging.getLogger(__name__)
 
-        key = '-'.join([pair, str(interval)])
+        if self.ohlc:
+            ohlc = super().get_ohlc(self.pair, self.interval, since=self.ohlc[-1].time - 1)
 
-        time = self.get_server_time()
+            if len(ohlc) > 1:
+                logger.debug('add new data')
 
-        if key in self.ohlc:
-            time_next = self.ohlc[key][-1].time + interval * 60
-            # Just update the last candle
-            if time < time_next:
-                logger.debug('just update, next in %d', time_next - time)
+                self.ohlc[-1] = ohlc[0]
+                self.ohlc.append(ohlc[1])
 
-                ohlc = super().get_ohlc(pair, interval, since=time)
-                self.ohlc[key][-1] = ohlc[0]
-
-            # Update the previous candle and add the new one
             else:
-                logger.debug('update previous and add')
+                logger.debug('update data')
 
-                ohlc = super().get_ohlc(pair, interval, since=time_next)
+                self.ohlc[-1] = ohlc[0]
 
-                self.ohlc[key][-1] = ohlc[0]
-                self.ohlc[key].append(ohlc[1])
-
-        # Get new data
         else:
             logger.debug('get new data')
 
-            self.ohlc[key] = super().get_ohlc(pair, interval)
+            self.ohlc = super().get_ohlc(self.pair, self.interval)
 
-        return self.ohlc[key]
+        return self.ohlc
 
-    def update_entries(self):
-        pass
-
-    def add_entry(self, name, direction, order_type, price=0, price2=0):
+    def add_order(self, direction, order_type, price=0, price2=0):
         logger = logging.getLogger(__name__)
 
-        entry = KrakenStrategyEntry(direction, order_type, price, price2, None)
+        if not self.order:
+            logger.info('new order: %s %s @ %.3f %.3f', direction, order_type, price, price2)
 
-        if name in self.__class__.pending_entries:
-            logger.info('Update entry %s: %s %s @ %.3f %.3f', name, direction, order_type,
-                        price, price2)
-            self._update_entry(name, entry)
+            self._send_email(
+                'New order',
+                '{} {} @ {} {}'.format(direction, order_type, price, price2))
 
-        elif name in self.__class__.confirmed_entries:
-            logger.info('Entry %s already confirmed', name)
+            self.order = True
+
+            # if direction == 'sell':
+            #     order = super().add_order(self.pair, direction, order_type, self.volume, price, price2)
+            #     self.volume = 0
+
+            # else:
+            #     if order_type == 'market':
+            #         volume = self.volume2 / self.get_price(self.pair)
+            #     elif order_type in ['limit', 'stop-loss']:
+            #         volume = self.volume2 / price
+
+            #     order = super().add_order(self.pair, direction, order_type, volume, price, price2)
+            #     self.volume2 = 0
+
+            # self.order = order.txids
 
         else:
-            logger.info('New entry %s: %s %s @ %.3f %.3f', name, direction, order_type, price,
-                        price2)
-            self._add_entry(name, entry)
+            logger.debug('order already exists')
 
-    def cancel_entry(self, name):
+    def update_order(self):
+        pass
+
+    def cancel_order(self):
         logger = logging.getLogger(__name__)
 
-        if name in self.__class__.pending_entries:
-            logger.info('Cancel pending entry %s', name)
+        if self.order:
+            logger.info('cancel order')
 
-        elif name in self.__class__.confirmed_entries:
-            logger.info('Cancel confirmed entry %s', name)
+            self._send_email('Cancel order', '')
+
+            # orders = self.query_orders(','.join(self.order))
+
+            # for order in orders:
+            #     if order.status in ['open', 'pending']:
+            #         self.cancel_order(order.status)
+
+            # self.order = None
+
+            self.order = None
 
         else:
-            logger.info('Entry %s not found', name)
-
-    def _update_entry(self, name, entry):
-        pass
-
-    def _add_entry(self, name, entry):
-        pass
+            logger.debug('order does not exist')
 
 
 class KrakenStrategy(metaclass=abc.ABCMeta):
-    def __init__(self, pair, interval, live=False):
-        self.pair = pair
-        self.interval = interval
-        self.live = live
-
-        self.k = KrakenStrategyAPI()
-
+    def __init__(self):
         self.parse_config(self.get_config())
 
     def get_config(self):
@@ -111,6 +145,7 @@ class KrakenStrategy(metaclass=abc.ABCMeta):
         config.read(os.path.expanduser('~') + '/.krakenst.conf')
 
         module_name = self.__module__.split('.')[-1]
+
         return config[module_name]
 
     @abc.abstractmethod

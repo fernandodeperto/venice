@@ -1,20 +1,16 @@
-# pylint: disable=invalid-name
-# pylint: disable=too-few-public-methods
-# pylint: disable=missing-docstring
-
 import importlib
 import inspect
 import signal
 import time
 import collections
 import argparse
-import sys
+# import sys
 import logging
 import logging.config
 
 import argcomplete
 
-from kraken.strategy import KrakenStrategy
+from kraken.strategy import KrakenStrategy, KrakenStrategyAPI
 
 KrakenStrategyModule = collections.namedtuple(
     'KrakenStrategyModule',
@@ -39,7 +35,7 @@ def main():
     args = parser.parse_args()
 
     logging.config.fileConfig('logging.conf')
-    logger = logging.getLogger('root')
+    # logger = logging.getLogger()
 
     run = 1
     signal.signal(signal.SIGINT, signal_handler)
@@ -49,12 +45,14 @@ def main():
     if not interval:
         raise ValueError('invalid interval', args.interval)
 
-    strategy = load_module(args.strategy).value(args.pair, interval, args.live)
+    strategy = load_module(args.strategy).value()
+
+    api = KrakenStrategyAPI(args.pair, args.volume, args.volume2, args.interval)
 
     while run:
         start_time = time.time()
 
-        logger.debug('running')
+        api.update_order()
 
         strategy.run()
 

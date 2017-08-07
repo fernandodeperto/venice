@@ -1,7 +1,7 @@
 import logging
 
 from kraken.strategy import KrakenStrategy, KrakenStrategyAPI
-from kraken.indicator import mom, crossunder, crossover
+from kraken.indicator import mom
 
 
 class Momentum(KrakenStrategy):
@@ -11,19 +11,19 @@ class Momentum(KrakenStrategy):
     def run(self):
         logger = logging.getLogger(__name__)
 
-        ohlc = self.k.get_ohlc(self.pair, self.interval)
+        api = KrakenStrategyAPI.api
+
+        ohlc = api.get_ohlc()
         close = [x.close for x in ohlc]
 
         momentum = mom(close, self.length)
+        momentum2 = mom(momentum, 1)
 
-        logger.debug('Momentum: %.3f', momentum[-1])
+        logger.debug('momentum: %.3f %.2f', momentum[-1], momentum2[-1])
 
-        k = KrakenStrategyAPI()
-
-        if crossover(momentum, 0):
-            k.cancel_entry('MomES')
-            k.add_entry('MomEL', 'buy', 'stop-loss', price=ohlc[-1].high)
-
-        elif crossunder(momentum, 0):
-            k.cancel_entry('MomEL')
-            k.add_entry('MomES', 'sell', 'stop-loss', price=ohlc[-1].low)
+        if momentum[-1] > 0 and momentum2[-1] > 0:
+            api.add_order('buy', 'stop-loss', price=ohlc[-1].high)
+        elif momentum[-1] < 0 and momentum2[-1] < 0:
+            api.add_order('sell', 'stop-loss', price=ohlc[-1].low)
+        else:
+            api.cancel_order()
