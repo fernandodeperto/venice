@@ -16,6 +16,10 @@ import logging
 NONCE_MULTIPLIER = 1000
 
 
+class KrakenConnectionError(Exception):
+    pass
+
+
 class KrakenConnection:
     def __init__(self, key='', secret='', url='api.kraken.com', version='0'):
         self.key = key
@@ -64,10 +68,13 @@ class KrakenConnection:
         data = urllib.parse.urlencode(request)
         headers.update(self.headers)
 
-        self.connection.request('POST', path, data, headers)
+        try:
+            self.connection.request('POST', path, data, headers)
 
-        response = self.connection.getresponse()
-        result = json.loads(response.read().decode())
+            response = self.connection.getresponse()
+            result = json.loads(response.read().decode())
+        except:
+            raise KrakenConnectionError
 
         logger.debug(result)
 

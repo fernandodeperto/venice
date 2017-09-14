@@ -108,7 +108,7 @@ class OHLC:
 
 
 class Ticker:
-    def __init__(self, pair, a, b, c):
+    def __init__(self, pair, a, b, c, v, p, t, l, h, o):
         """
         a = ask array(<price>, <whole lot volume>, <lot volume>),
         b = bid array(<price>, <whole lot volume>, <lot volume>),
@@ -256,7 +256,7 @@ class KrakenAPI:
         if result['error']:
             raise KrakenError(result['error'])
 
-        return Ticker(pair, *result['result'][pair])
+        return Ticker(pair, **result['result'][pair])
 
     @staticmethod
     def get_ohlc(pair, interval, since=None):

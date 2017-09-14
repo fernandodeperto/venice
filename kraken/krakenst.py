@@ -35,7 +35,7 @@ def main():
     args = parser.parse_args()
 
     logging.config.fileConfig('logging.conf')
-    # logger = logging.getLogger()
+    logger = logging.getLogger()
 
     run = 1
     signal.signal(signal.SIGINT, signal_handler)
@@ -52,7 +52,10 @@ def main():
     while run:
         start_time = time.time()
 
-        api.update_order()
+        try:
+            api.update_order()
+        except:
+            logger.debug('error updating order')
 
         strategy.run()
 

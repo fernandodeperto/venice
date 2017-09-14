@@ -9,7 +9,7 @@ from email.mime.text import MIMEText
 
 from collections import namedtuple
 
-from kraken.api import KrakenAPI
+from kraken.api import KrakenAPI, KrakenError
 
 KrakenStrategyEntry = namedtuple(
     'KrakenStrategyEntry',
@@ -46,22 +46,33 @@ class KrakenStrategyAPI(KrakenAPI):
         return KrakenStrategyEmailConfig(enable, fr, to, server, port, username, password)
 
     def _send_email(self, subject='', message=''):
-        if self.email.enable is 'true':
-            with smtplib.SMTP(self.email.server, port=self.email.port) as smtp_server:
-                msg = MIMEText(message)
-                msg['Subject'] = subject
-                msg['From'] = 'fernando@mendonca.xyz'
-                msg['To'] = 'fernando@mendonca.xyz'
+        if self.email.enable == 'true':
+            try:
+                with smtplib.SMTP(self.email.server, port=self.email.port) as smtp_server:
+                    msg = MIMEText(message)
+                    msg['Subject'] = subject
+                    msg['From'] = self.email.fr
+                    msg['To'] = self.email.to
 
-                smtp_server.starttls()
-                smtp_server.login(self.email.username, self.email.password)
-                smtp_server.send_message(msg)
+                    smtp_server.starttls()
+                    smtp_server.login(self.email.username, self.email.password)
+                    smtp_server.send_message(msg)
+            except:
+                raise
 
     def get_ohlc(self):
         logger = logging.getLogger(__name__)
 
         if self.ohlc:
-            ohlc = super().get_ohlc(self.pair, self.interval, since=self.ohlc[-1].time - 1)
+            try:
+                ohlc = super().get_ohlc(self.pair, self.interval, since=self.ohlc[-1].time - 1)
+            except:
+                logger.debug('error getting updated OHLC data')
+                return self.ohlc
+
+            if ohlc[0].volume <= self.ohlc[-1].volume:
+                logger.debug('invalid OHLC data')
+                raise KrakenError
 
             if len(ohlc) > 1:
                 logger.debug('add new data')
@@ -77,21 +88,21 @@ class KrakenStrategyAPI(KrakenAPI):
         else:
             logger.debug('get new data')
 
-            self.ohlc = super().get_ohlc(self.pair, self.interval)
+            try:
+                self.ohlc = super().get_ohlc(self.pair, self.interval)
+            except:
+                raise
 
+        logger.debug(self.ohlc[-1])
         return self.ohlc
 
     def add_order(self, direction, order_type, price=0, price2=0):
         logger = logging.getLogger(__name__)
 
-        if not self.order:
+        if not self.order or (self.order[3] == 'closed' and self.order[0] != direction):
             logger.info('new order: %s %s @ %.3f %.3f', direction, order_type, price, price2)
 
-            self._send_email(
-                'New order',
-                '{} {} @ {} {}'.format(direction, order_type, price, price2))
-
-            self.order = True
+            self.order = (direction, order_type, price, 'open')
 
             # if direction == 'sell':
             #     order = super().add_order(self.pair, direction, order_type, self.volume, price, price2)
@@ -108,19 +119,32 @@ class KrakenStrategyAPI(KrakenAPI):
 
             # self.order = order.txids
 
-        else:
-            logger.debug('order already exists')
-
     def update_order(self):
-        pass
+        logger = logging.getLogger(__name__)
+
+        if self.order and self.order[3] == 'open':
+            if ((self.order[0] == 'buy' and self.ohlc[-1].close >= self.order[2]) or
+                    (self.order[0] == 'sell' and self.ohlc[-1].close <= self.order[2])):
+
+                logger.info('confirm order: {} {} @ {}'.format(self.order[0], self.order[1],
+                                                               self.order[2]))
+
+                try:
+                    self._send_email('Confirm order', '{} {} @ {}'.format(self.order[0],
+                                                                          self.order[1],
+                                                                          self.order[2]))
+                except Exception as e:
+                    logger.debug('error sending e-mail: {}'.format(e))
+
+                self.order = (self.order[0], self.order[1], self.order[2], 'closed')
 
     def cancel_order(self):
         logger = logging.getLogger(__name__)
 
-        if self.order:
+        if self.order and self.order[3] == 'open':
             logger.info('cancel order')
 
-            self._send_email('Cancel order', '')
+            # self._send_email('Cancel order', '')
 
             # orders = self.query_orders(','.join(self.order))
 
@@ -128,12 +152,7 @@ class KrakenStrategyAPI(KrakenAPI):
             #     if order.status in ['open', 'pending']:
             #         self.cancel_order(order.status)
 
-            # self.order = None
-
             self.order = None
-
-        else:
-            logger.debug('order does not exist')
 
 
 class KrakenStrategy(metaclass=abc.ABCMeta):

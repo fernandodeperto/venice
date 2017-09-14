@@ -27,6 +27,7 @@ def main():
     parser_order.set_defaults(func=order)
     parser_order.add_argument('-q', '--quote', action='store_true', help='convert volume to quote currency')
     parser_order.add_argument('-n', '--validate', action='store_true', help='do not place order, just validate arguments')
+    parser_order.add_argument('-r', '--replace', help='replace existing order')
     parser_order.add_argument('pair', choices=['XETHZEUR', 'XLTCZEUR', 'XXBTZEUR', 'XETHXXBT',
                                                'XETHZUSD'], help='asset pair')
     parser_order.add_argument('direction', choices=['buy', 'sell'], help='order direction')
@@ -103,6 +104,10 @@ def main():
 def order(args):
     k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
 
+    if args.replace:
+        k = krakencli.Krakencli(os.path.expanduser('~') + '/.kraken.key')
+        k.cancel_order(args.replace)
+
     if '%' in args.volume:
         pairs = re.match(r'([A-Z]{4})([A-Z]{4})', args.pair)
         percent = re.match(r'(\d+\.\d+|\d+)%', args.volume)
@@ -167,13 +172,13 @@ def query(args):
     result = k.query_orders(','.join(args.order_id))
 
     print(tabulate.tabulate(
-        [[order.txid, order.info.direction, order.info.order_type,
-          order.info.price, order.info.price2, order.info.leverage, order.cost,
-          order.fee, order.avg_price, order.stop_price, order.status,
-          order.volume, order.volume_exec] for order in result],
+        [[order.txid, order.info.direction, order.info.order_type, order.info.price,
+          order.info.price2, order.info.leverage, order.cost, order.fee, order.avg_price,
+          order.stop_price, order.status, order.reason, order.volume, order.volume_exec]
+         for order in result],
         headers=['txid', 'direction', 'order_type', 'price', 'price2',
                  'leverage', 'cost', 'fee', 'avg_price', 'stop_price',
-                 'status', 'volume', 'volume_exec'],
+                 'status', 'reason', 'volume', 'volume_exec'],
         floatfmt='.{}g'.format(MAXIMUM_PRECISION)))
 
 

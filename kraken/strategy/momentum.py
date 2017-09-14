@@ -1,6 +1,8 @@
 import logging
 
 from kraken.strategy import KrakenStrategy, KrakenStrategyAPI
+from kraken.api import KrakenError
+from kraken.connection import KrakenConnectionError
 from kraken.indicator import mom
 
 
@@ -13,7 +15,12 @@ class Momentum(KrakenStrategy):
 
         api = KrakenStrategyAPI.api
 
-        ohlc = api.get_ohlc()
+        try:
+            ohlc = api.get_ohlc()
+        except (KrakenConnectionError, KrakenError):
+            logger.debug('error getting OHLC data')
+            return
+
         close = [x.close for x in ohlc]
 
         momentum = mom(close, self.length)
@@ -22,8 +29,8 @@ class Momentum(KrakenStrategy):
         logger.debug('momentum: %.3f %.2f', momentum[-1], momentum2[-1])
 
         if momentum[-1] > 0 and momentum2[-1] > 0:
-            api.add_order('buy', 'stop-loss', price=ohlc[-1].high)
+            api.add_order('buy', 'stop-loss', price=ohlc[-2].high)
         elif momentum[-1] < 0 and momentum2[-1] < 0:
-            api.add_order('sell', 'stop-loss', price=ohlc[-1].low)
+            api.add_order('sell', 'stop-loss', price=ohlc[-2].low)
         else:
             api.cancel_order()
