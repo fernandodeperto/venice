@@ -3,8 +3,6 @@ import hashlib
 import hmac
 import json
 
-import requests
-
 from .api import ExchangeAPI
 
 
@@ -14,28 +12,31 @@ class BitfinexAPI(ExchangeAPI):
                  timeout=5):
         super().__init__(uri, version, key, secret)
 
-    def request(self, method, endpoint, sign=False, params=None):
-        """Prepare and send a query for the exchange."""
-        path = self.version + '/' + endpoint if self.version else endpoint
+    def query(self, method, endpoint, sign=False, **kwargs):
+        """Prepare a query for the exchange."""
+        path = '/'.join([self.version, endpoint])
 
         headers = {
             'User-Agent': 'venice/1.0'
         }
 
         if sign:
-            if not params:
-                params = {}
+            headers.update(self._sign(path, kwargs['params'] if 'params' in kwargs else None))
 
-            params['nonce'] = self.nonce()
-            params['request'] = '/' + self.version + '/' + endpoint
+        return self._request(method, path, headers=headers)
 
-            encoded_params = base64.standard_b64encode(json.dumps(params).encode('utf-8'))
-            hash_params = hmac.new(self.secret.encode('utf-8'), encoded_params, hashlib.sha384)
+    def _sign(self, path, params=None):
+        if not params:
+            params = {}
 
-            headers.update({
-                "X-BFX-APIKEY": self.key,
-                "X-BFX-SIGNATURE": hash_params.hexdigest(),
-                "X-BFX-PAYLOAD": encoded_params,
-            })
+        params['nonce'] = self._nonce()
+        params['request'] = '/' + path
 
-        return requests.request(method, self.uri + path, timeout=self.timeout, headers=headers)
+        encoded_params = base64.standard_b64encode(json.dumps(params).encode('utf-8'))
+        hash_params = hmac.new(self.secret.encode('utf-8'), encoded_params, hashlib.sha384)
+
+        return {
+            "X-BFX-APIKEY": self.key,
+            "X-BFX-SIGNATURE": hash_params.hexdigest(),
+            "X-BFX-PAYLOAD": encoded_params,
+        }

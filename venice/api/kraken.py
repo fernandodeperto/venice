@@ -1,12 +1,9 @@
 import base64
 import hashlib
 import hmac
-import json
-import logging
 import urllib
 import urllib.parse
 
-import requests
 
 from .api import ExchangeAPI
 
@@ -17,11 +14,8 @@ class KrakenAPI(ExchangeAPI):
                  timeout=10):
         super().__init__(uri, version, key, secret)
 
-        self.logger = logging.getLogger(__name__)
-        print(__name__)
-
-    def request(self, endpoint, sign=False, params=None):
-        """Prepare and send a request for the exchange."""
+    def query(self, endpoint, sign=False, **kwargs):
+        """Prepare a request for the exchange."""
         request_type = 'private' if sign else 'public'
         path = '/'.join([self.version, request_type, endpoint])
 
@@ -30,24 +24,23 @@ class KrakenAPI(ExchangeAPI):
         }
 
         if sign:
-            if not params:
-                params = {}
+            headers.update(self._sign(path, kwargs['params'] if 'params' in kwargs else None))
 
-            params['nonce'] = self.nonce()
+        return self._request('POST', path, headers=headers)
 
-            query_data = urllib.parse.urlencode(params)
-            encoded_data = (params['nonce'] + query_data).encode('utf-8')
-            message = path.encode('utf-8') + hashlib.sha256(encoded_data).digest()
-            signature = hmac.new(base64.b64decode(self.secret), message, hashlib.sha512)
-            digest = base64.b64encode(signature.digest())
+    def _sign(self, path, params=None):
+        if not params:
+            params = {}
 
-            headers.update({
-                'API-Key': self.key,
-                'API-Sign': digest.decode('utf-8')
-            })
+        params['nonce'] = self._nonce()
 
-        self.logger.debug('New request: path: %s, headers: %s, params: %s', self.uri +
-                          path, headers, params)
+        query_data = urllib.parse.urlencode(params)
+        encoded_data = (params['nonce'] + query_data).encode('utf-8')
+        message = path.encode('utf-8') + hashlib.sha256(encoded_data).digest()
+        signature = hmac.new(base64.b64decode(self.secret), message, hashlib.sha512)
+        digest = base64.b64encode(signature.digest())
 
-        return requests.request('POST', self.uri + path, timeout=self.timeout, headers=headers,
-                                json=params)
+        return {
+            'API-Key': self.key,
+            'API-Sign': digest.decode('utf-8')
+        }

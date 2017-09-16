@@ -1,5 +1,11 @@
 import abc
+import logging
+import requests
 import time
+
+
+class ExchangeConnectionException(Exception):
+    pass
 
 
 class ExchangeAPI(metaclass=abc.ABCMeta):
@@ -19,12 +25,24 @@ class ExchangeAPI(metaclass=abc.ABCMeta):
             self.key = f.readline().strip()
             self.secret = f.readline().strip()
 
+    @abc.abstractmethod
+    def query(self, method, endpoint, sign=False, **kwargs):
+        """Abstract method used to send the request to the exchange."""
+        raise NotImplementedError
+
     @staticmethod
-    def nonce():
+    def _nonce():
         """Create a nonce based on the current time."""
         return str(int(1000 * time.time()))
 
-    @abc.abstractmethod
-    def request(self, method, endpoint, sign=False, params=None):
-        """Abstract method used to send the request to the exchange."""
-        raise NotImplementedError
+    def _request(self, method, path, **kwargs):
+        """Send the resquest to the exchange."""
+        logger = logging.getLogger(__name__)
+
+        response = requests.request(method, self.uri + path, timeout=self.timeout, **kwargs)
+
+        logger.debug(
+            'new request: method={}, path={}, kwargs={}, ok={}, text={}'.format(
+                method, path, kwargs, response.ok, response.text))
+
+        return response
