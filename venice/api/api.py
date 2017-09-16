@@ -1,12 +1,5 @@
 import abc
-import base64
-import hashlib
-import hmac
-import json
-import logging
 import time
-
-log = logging.getLogger(__name__)
 
 
 class ExchangeAPI(metaclass=abc.ABCMeta):

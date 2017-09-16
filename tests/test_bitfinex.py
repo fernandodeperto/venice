@@ -29,5 +29,4 @@ class TestBitfinex(unittest.TestCase):
         api.load_key(os.path.expanduser('~') + '/.bitfinex.key')
 
         result = api.request('POST', 'mytrades', sign=True, params={'symbol': 'ltcusd'})
-        print(result.text)
         self.assertTrue(result.ok, result.text)

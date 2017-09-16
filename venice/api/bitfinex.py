@@ -13,7 +13,6 @@ class BitfinexAPI(ExchangeAPI):
     def __init__(self, uri='https://api.bitfinex.com/', version='v1', key=None, secret=None,
                  timeout=5):
         super().__init__(uri, version, key, secret)
-        pass
 
     def request(self, method, endpoint, sign=False, params=None):
         """Prepare and send a query for the exchange."""
