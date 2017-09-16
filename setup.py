@@ -22,11 +22,11 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     version='1.0rc1',
 
-    description='Kraken exchange CLI',
+    description='Cryptocurrency exchange tool',
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/',
+    url='https://github.com/fernandodeperto/venice',
 
     # Author details
     author='Fernando Mendonca',
@@ -82,8 +82,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'krakencli=krakencli:main',
-            'krakenst=kraken.krakenst:main',
+            'venice=venice.main:main',
         ],
     },
 

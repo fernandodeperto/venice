@@ -1,10 +1,33 @@
+import os
 import unittest
 
-from bitfinex.connection import BitfinexConnection
+from venice.api.bitfinex import BitfinexAPI
 
 
 class TestBitfinex(unittest.TestCase):
-    def test_connection(self):
-        connection = BitfinexConnection(key='wCszP0cowyY7QA2AQ1onGR55pAEfZr0SAoSNEeZ3dZQ',
-                                        secret='lJqiiC1hiTjioNi9mqH3lASpnfFGs2BkOiBWvDtjzDG')
-        print(connection.key_info())
+    def test_public(self):
+        api = BitfinexAPI()
+
+        result = api.request('GET', 'symbols')
+        self.assertTrue(result.ok, result.text)
+
+    def test_public_with_arguments(self):
+        api = BitfinexAPI()
+
+        result = api.request('GET', 'stats/btcusd')
+        self.assertTrue(result.ok, result.text)
+
+    def test_private(self):
+        api = BitfinexAPI()
+        api.load_key(os.path.expanduser('~') + '/.bitfinex.key')
+
+        result = api.request('POST', 'account_infos', sign=True)
+        self.assertTrue(result.ok, result.text)
+
+    def test_private_with_arguments(self):
+        api = BitfinexAPI()
+        api.load_key(os.path.expanduser('~') + '/.bitfinex.key')
+
+        result = api.request('POST', 'mytrades', sign=True, params={'symbol': 'ltcusd'})
+        print(result.text)
+        self.assertTrue(result.ok, result.text)
