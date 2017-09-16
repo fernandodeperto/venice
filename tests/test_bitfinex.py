@@ -8,25 +8,25 @@ class TestBitfinex(unittest.TestCase):
     def test_public(self):
         api = BitfinexAPI()
 
-        result = api.request('GET', 'symbols')
+        result = api.query('GET', 'symbols')
         self.assertTrue(result.ok, result.text)
 
     def test_public_with_arguments(self):
         api = BitfinexAPI()
 
-        result = api.request('GET', 'stats/btcusd')
+        result = api.query('GET', 'stats/btcusd')
         self.assertTrue(result.ok, result.text)
 
     def test_private(self):
         api = BitfinexAPI()
         api.load_key(os.path.expanduser('~') + '/.bitfinex.key')
 
-        result = api.request('POST', 'account_infos', sign=True)
+        result = api.query('POST', 'account_infos', sign=True)
         self.assertTrue(result.ok, result.text)
 
     def test_private_with_arguments(self):
         api = BitfinexAPI()
         api.load_key(os.path.expanduser('~') + '/.bitfinex.key')
 
-        result = api.request('POST', 'mytrades', sign=True, params={'symbol': 'ltcusd'})
+        result = api.query('POST', 'mytrades', sign=True, params={'symbol': 'ltcusd'})
         self.assertTrue(result.ok, result.text)
