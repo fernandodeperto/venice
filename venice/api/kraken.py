@@ -23,7 +23,9 @@ class KrakenAPI(ExchangeAPI):
                  timeout=10):
         super().__init__(uri, version, key, secret)
 
-    def query(self, endpoint, sign=False, **kwargs):
+    def query2(self, endpoint, sign=False, **kwargs):
+        logger = logging.getLogger(__name__)
+
         request = kwargs['params'] if 'params' in kwargs else {}
 
         if sign:
@@ -32,6 +34,8 @@ class KrakenAPI(ExchangeAPI):
             result = self.query_public(endpoint, request)
 
         result_json = json.loads(result.text)
+
+        logger.debug(result_json)
 
         return result.status_code, result_json
 
@@ -65,5 +69,35 @@ class KrakenAPI(ExchangeAPI):
 
         return requests.request('POST', self.uri + path, headers=headers, data=data)
 
-    def _nonce(self):
-        return int(1000 * time.time())
+    def query(self, endpoint, sign=False, **kwargs):
+        """Prepare a request for the exchange."""
+        request_type = 'private' if sign else 'public'
+        path = '/' + '/'.join([self.version, request_type, endpoint])
+
+        params = kwargs['params'] if 'params' in kwargs else {}
+
+        if sign:
+            headers, params = self._sign(path, params)
+
+        encoded_data = urllib.parse.urlencode(params)
+
+        return self._request('POST', path, headers=headers, data=encoded_data)
+
+    def _sign(self, path, params=None):
+        if not params:
+            params = {}
+
+        params['nonce'] = self._nonce()
+
+        post_data = urllib.parse.urlencode(params)
+        encoded_data = (params['nonce'] + post_data).encode()
+        message = path.encode() + hashlib.sha256(encoded_data).digest()
+        signature = hmac.new(base64.b64decode(self.secret), message, hashlib.sha512)
+        digest = base64.b64encode(signature.digest())
+
+        headers = {
+            'API-Key': self.key,
+            'API-Sign': digest.decode(),
+        }
+
+        return headers, params
