@@ -35,13 +35,6 @@ class KrakenAPI(ExchangeAPI):
 
         return result.status_code, result_json
 
-    def connect(self):
-        self.connection = http.client.HTTPSConnection(self.uri)
-        return self
-
-    def disconnect(self):
-        self.connection.close()
-
     def query_public(self, method, request={}):
         path = '/' + '/'.join([self.version, 'public', method])
         return self._query(path, request)
@@ -74,5 +67,3 @@ class KrakenAPI(ExchangeAPI):
 
     def _nonce(self):
         return int(1000 * time.time())
-
-
