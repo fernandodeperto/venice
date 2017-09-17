@@ -13,25 +13,29 @@ class TestBitfinex(unittest.TestCase):
     def test_public(self):
         api = BitfinexAPI()
 
-        result = api.query('GET', 'symbols')
-        self.assertTrue(result.ok, result.text)
+        status_code, result = api.query('GET', 'symbols')
+
+        self.assertEqual(status_code, 200, status_code)
 
     def test_public_with_arguments(self):
         api = BitfinexAPI()
 
-        result = api.query('GET', 'stats/btcusd')
-        self.assertTrue(result.ok, result.text)
+        status_code, result = api.query('GET', 'stats/btcusd')
+
+        self.assertEqual(status_code, 200, status_code)
 
     def test_private(self):
         api = BitfinexAPI()
         api.load_key(os.path.expanduser('~') + '/.bitfinex.key')
 
-        result = api.query('POST', 'account_infos', sign=True)
-        self.assertTrue(result.ok, result.text)
+        status_code, result = api.query('POST', 'account_infos', sign=True)
+
+        self.assertEqual(status_code, 200, status_code)
 
     def test_private_with_arguments(self):
         api = BitfinexAPI()
         api.load_key(os.path.expanduser('~') + '/.bitfinex.key')
 
-        result = api.query('POST', 'mytrades', sign=True, params={'symbol': 'ltcusd'})
-        self.assertTrue(result.ok, result.text)
+        status_code, result = api.query('POST', 'mytrades', sign=True, params={'symbol': 'ltcusd'})
+
+        self.assertEqual(status_code, 200, status_code)

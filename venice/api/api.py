@@ -1,4 +1,5 @@
 import abc
+import json
 import logging
 import requests
 import time
@@ -45,4 +46,4 @@ class ExchangeAPI(metaclass=abc.ABCMeta):
             'new request: method={}, path={}, kwargs={}, ok={}, text={}'.format(
                 method, path, kwargs, response.ok, response.text))
 
-        return response
+        return response.status_code, json.loads(response.text)

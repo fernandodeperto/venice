@@ -11,22 +11,24 @@ logging.config.fileConfig('logging_tests.conf')
 
 class TestKraken(unittest.TestCase):
     def test_public(self):
-        logger = logging.getLogger(__name__)
-
         api = KrakenAPI()
 
-        result = api.query('Ticker', params={'pair': 'XETHZUSD'})
-        self.assertTrue(result.ok, result.text)
-
-        logger.debug(result.text)
+        status_code, result = api.query('Ticker', params={'pair': 'XETHZUSD'})
+        self.assertEqual(status_code, 200, result)
+        self.assertFalse(len(result['error']), result['error'])
 
     def test_private(self):
-        logger = logging.getLogger(__name__)
-
         api = KrakenAPI()
         api.load_key(os.path.expanduser('~') + '/.kraken.key')
 
-        result = api.query('TradeBalance', sign=True, params={'asset': 'ZEUR'})
-        self.assertTrue(result.ok, result.text)
+        status_code, result = api.query('Balance', sign=True)
+        self.assertEqual(status_code, 200, result)
+        self.assertFalse(len(result['error']), result['error'])
 
-        logger.debug(result.text)
+    def test_private_with_params(self):
+        api = KrakenAPI()
+        api.load_key(os.path.expanduser('~') + '/.kraken.key')
+
+        status_code, result = api.query('TradeBalance', sign=True, params={'asset': 'ZEUR'})
+        self.assertEqual(status_code, 200, result)
+        self.assertFalse(len(result['error']), result['error'])

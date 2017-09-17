@@ -26,9 +26,14 @@ class KrakenAPI(ExchangeAPI):
         params = kwargs['params'] if 'params' in kwargs else {}
 
         if sign:
-            headers.update(self._sign(path, params))
+            sign_headers, params = self._sign(path, params)
+            headers.update(sign_headers)
 
-        return self._request('POST', path, headers=headers, json=params)
+        encoded_data = urllib.parse.urlencode(params)
+
+        print(headers)
+
+        return self._request('POST', path, headers=headers, data=encoded_data)
 
     def _sign(self, path, params=None):
         if not params:
@@ -36,13 +41,15 @@ class KrakenAPI(ExchangeAPI):
 
         params['nonce'] = self._nonce()
 
-        query_data = urllib.parse.urlencode(params)
-        encoded_data = (params['nonce'] + query_data).encode('utf-8')
-        message = path.encode('utf-8') + hashlib.sha256(encoded_data).digest()
+        post_data = urllib.parse.urlencode(params)
+        encoded_data = (params['nonce'] + post_data).encode()
+        message = path.encode() + hashlib.sha256(encoded_data).digest()
         signature = hmac.new(base64.b64decode(self.secret), message, hashlib.sha512)
         digest = base64.b64encode(signature.digest())
 
-        return {
+        headers = {
             'API-Key': self.key,
-            'API-Sign': digest.decode('utf-8')
+            'API-Sign': digest.decode(),
         }
+
+        return headers, params
