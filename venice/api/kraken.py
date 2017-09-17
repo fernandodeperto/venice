@@ -1,15 +1,8 @@
 import base64
 import hashlib
 import hmac
-import requests
 import urllib
 import urllib.parse
-
-import http.client
-import logging
-import json
-import time
-
 
 from .api import ExchangeAPI
 
