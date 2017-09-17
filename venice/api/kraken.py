@@ -23,10 +23,12 @@ class KrakenAPI(ExchangeAPI):
             'User-Agent': 'venice/1.0'
         }
 
-        if sign:
-            headers.update(self._sign(path, kwargs['params'] if 'params' in kwargs else None))
+        params = kwargs['params'] if 'params' in kwargs else {}
 
-        return self._request('POST', path, headers=headers)
+        if sign:
+            headers.update(self._sign(path, params))
+
+        return self._request('POST', path, headers=headers, json=params)
 
     def _sign(self, path, params=None):
         if not params:
