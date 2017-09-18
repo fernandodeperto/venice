@@ -10,6 +10,7 @@ import time
 
 import argcomplete
 
+from . import api
 from . import strategy
 
 StrategyModule = collections.namedtuple(
@@ -30,14 +31,10 @@ def main():
     parser.add_argument('interval', help='candle interval')
     parser.add_argument('refresh', type=int, help='time between updates')
 
-    strategy_parsers = parser.add_subparsers(help='strategy help')
-
     # Configure the strategies' subparsers
-    classes = strategy_classes()
-
-    for class_name, class_value in classes:
-        strategy_parser = strategy_parsers.add_parser(class_name, help=class_value.help_text())
-        class_value.configure_parser(strategy_parser)
+    strategy_parsers = parser.add_subparsers(dest='strategy', title='strategies')
+    strategy_classes = get_classes(strategy, strategy.Strategy)
+    configure_parsers(strategy_parsers, strategy_classes)
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
@@ -45,24 +42,60 @@ def main():
     logging.config.fileConfig('logging.conf')
     logger = logging.getLogger()
 
+    # Basic initialization
     run = 1
     signal.signal(signal.SIGINT, signal_handler)
 
-def main2():
+    # Initialize the API
+    api_classes = get_classes(api, api.ExchangeAPI)
+
+    if args.exchange not in api_classes.keys():
+        raise ValueError('invalid exchange')
+
+    chosen_api = api_classes[args.exchange]()
+
+    # Initialize the strategy
+    chosen_strategy = strategy_classes[args.strategy](**vars(args))
+
+    # Candle interval
     interval = parse_interval(args.interval)
 
     if not interval:
         raise ValueError('invalid interval', args.interval)
 
-    strategy = load_module(args.strategy).value()
+    while run:
+        start_time = time.time()
 
-def strategy_classes():
-    classes = []
+        """
+        Notes on the interface between the main code, the strategy and the API.
 
-    for module_name, module_value in inspect.getmembers(strategy, inspect.ismodule):
+        - the strategy should be able to return a list of order requests, including:
+          - place order(name, type + arguments)
+          - cancel order(name)
+        - the strategy should not have direct access to the API or the orders
+        - one possibility is for the strategy to not even know how much money is being manipulates,
+        instead just placing and cancelling contracts. in this case, the main code informs the
+        strategy how many contracts it can use. another possibility is to inform the strategy the
+        volume it can use on both currencies, and it places orders in terms of the volume, and not
+        contracts
+        """
+
+        # chosen_strategy.run()
+
+        time.sleep(args.refresh - (time.time() - start_time))
+
+def configure_parsers(parsers, classes):
+    for class_name, class_value in classes.items():
+        parser = parsers.add_parser(class_name)
+        class_value.configure_parser(parser)
+
+def get_classes(base_module, class_super):
+    classes = {}
+
+    for module_name, module_value in inspect.getmembers(base_module, inspect.ismodule):
         for class_name, class_value in inspect.getmembers(module_value, inspect.isclass):
-            if issubclass(class_value, strategy.strategy.Strategy) and class_value != strategy.strategy.Strategy:
-                classes.append((module_name, class_value))
+            if issubclass(class_value, class_super) and class_value != class_super:
+                classes[module_name] = class_value
 
     return classes
 

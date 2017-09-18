@@ -5,7 +5,7 @@ import requests
 import time
 
 
-class ExchangeConnectionException(Exception):
+class ExchangeAPIException(Exception):
     pass
 
 
