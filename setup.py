@@ -82,7 +82,6 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'venice=venice.main:main',
             'krakencli=krakencli.main:main',
         ],
     },
