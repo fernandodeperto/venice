@@ -1,6 +1,7 @@
 import logging
 
-from kraken.strategy import KrakenStrategy, KrakenStrategyAPI
+from .strategy import KrakenStrategy, KrakenStrategyAPI
+
 from kraken.api import KrakenError
 from kraken.connection import KrakenConnectionError
 from kraken.indicator import mom

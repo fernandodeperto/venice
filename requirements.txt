@@ -1,1 +1,4 @@
+argcomplete==1.9.2
+krakenex==0.1.4
 requests==2.18.4
+tabulate==0.7.7

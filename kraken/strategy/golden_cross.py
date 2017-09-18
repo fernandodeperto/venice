@@ -1,4 +1,5 @@
-from kraken.strategy import KrakenStrategy
+from .strategy import KrakenStrategy
+
 from kraken.indicator import sma
 from kraken.strategy.api import KrakenStrategyAPI
 
