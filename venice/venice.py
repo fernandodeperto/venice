@@ -5,15 +5,16 @@ import inspect
 import logging
 import logging.config
 import signal
-# import sys
+import sys
 import time
 
 import argcomplete
 
+from . import strategy
+
 StrategyModule = collections.namedtuple(
     'StrategyModule',
     'module_name class_name value')
-
 
 def main():
     def signal_handler(sig, frame):
@@ -28,7 +29,15 @@ def main():
     parser.add_argument('volume2', type=float, help='quote currency volume')
     parser.add_argument('interval', help='candle interval')
     parser.add_argument('refresh', type=int, help='time between updates')
-    parser.add_argument('strategy', help='trading strategy')
+
+    strategy_parsers = parser.add_subparsers(help='strategy help')
+
+    # Configure the strategies' subparsers
+    classes = strategy_classes()
+
+    for class_name, class_value in classes:
+        strategy_parser = strategy_parsers.add_parser(class_name, help=class_value.help_text())
+        class_value.configure_parser(strategy_parser)
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
@@ -39,6 +48,7 @@ def main():
     run = 1
     signal.signal(signal.SIGINT, signal_handler)
 
+def main2():
     interval = parse_interval(args.interval)
 
     if not interval:
@@ -46,40 +56,15 @@ def main():
 
     strategy = load_module(args.strategy).value()
 
-    api = KrakenStrategyAPI(args.pair, args.volume, args.volume2, args.interval)
-
-    while run:
-        start_time = time.time()
-
-        try:
-            api.update_order()
-        except:
-            logger.debug('error updating order')
-
-        strategy.run()
-
-        sleep_time = args.refresh - (time.time() - start_time)
-        if sleep_time > 0:
-            time.sleep(sleep_time)
-
-
-def load_module(module_name):
-    parent_modules = __name__.split('.')
-    module_name = '.'.join(parent_modules[0:len(parent_modules) - 1] +
-                           ['strategy', module_name])
-
-    module = importlib.import_module(module_name)
-
+def strategy_classes():
     classes = []
-    for name, value in inspect.getmembers(module, inspect.isclass):
-        if issubclass(value, KrakenStrategy) and value != KrakenStrategy:
-            classes.append(KrakenStrategyModule(module_name, name, value))
 
-    if len(classes) > 1:
-        raise ValueError('module {} has more than one valid class'.format(module_name))
+    for module_name, module_value in inspect.getmembers(strategy, inspect.ismodule):
+        for class_name, class_value in inspect.getmembers(module_value, inspect.isclass):
+            if issubclass(class_value, strategy.strategy.Strategy) and class_value != strategy.strategy.Strategy:
+                classes.append((module_name, class_value))
 
-    return classes[0]
-
+    return classes
 
 def parse_interval(interval):
     keys = {
