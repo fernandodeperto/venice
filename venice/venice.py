@@ -78,6 +78,9 @@ def main():
         strategy how many contracts it can use. another possibility is to inform the strategy the
         volume it can use on both currencies, and it places orders in terms of the volume, and not
         contracts
+        - there's also two different approaches with regard to the orders: allowing and nont
+        allowing short orders. not allowing short orders means that the strategy can only
+        buy and sell
         """
 
         # chosen_strategy.run()
