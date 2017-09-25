@@ -20,6 +20,10 @@ StrategyModule = collections.namedtuple(
 def main():
     def signal_handler(sig, frame):
         nonlocal run
+
+        logger = logging.getLogger(__name__)
+        logger.info("Signal {} received".format(sig))
+
         run = 0
 
     parser = argparse.ArgumentParser(description='bot based on a strategy')
@@ -62,6 +66,8 @@ def main():
 
     if not interval:
         raise ValueError('invalid interval', args.interval)
+
+    sys.exit()
 
     while run:
         start_time = time.time()
