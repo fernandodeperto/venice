@@ -3,7 +3,7 @@ import logging.config
 import os
 import unittest
 
-from venice.api.bitfinex import BitfinexAPI
+from venice.exchange.bitfinex import BitfinexAPI
 
 
 logging.config.fileConfig('logging_tests.conf')
