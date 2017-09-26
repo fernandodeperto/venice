@@ -4,7 +4,7 @@ import hmac
 import urllib
 import urllib.parse
 
-from .connection import ExchangeConnection
+from .connection import ExchangeConnection, ExchangeConnectionException
 
 
 class KrakenConnectionError(Exception):

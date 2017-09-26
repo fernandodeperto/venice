@@ -3,7 +3,7 @@ import hashlib
 import hmac
 import json
 
-from .connection import ExchangeConnection
+from .connection import ExchangeConnection, ExchangeConnectionException
 
 
 class BitfinexConnection(ExchangeConnection):
