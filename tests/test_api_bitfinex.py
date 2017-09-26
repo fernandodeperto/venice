@@ -10,4 +10,6 @@ logging.config.fileConfig('logging_tests.conf')
 
 
 class TestBitfinexAPI(unittest.TestCase):
-    pass
+    def test_ticker(self):
+        with BitfinexAPI() as api:
+            code, text  = api.ticker('ltcusd')

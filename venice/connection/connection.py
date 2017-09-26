@@ -20,6 +20,12 @@ class ExchangeConnection(metaclass=abc.ABCMeta):
         self.secret = secret
         self.timeout = timeout
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type_, value, traceback):
+        pass
+
     def load_key(self, path):
         """Load key and secret from file."""
         with open(path, 'r') as f:

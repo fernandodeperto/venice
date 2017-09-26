@@ -16,6 +16,12 @@ class KrakenConnection(ExchangeConnection):
                  timeout=10):
         super().__init__(uri, version, key, secret)
 
+    def __enter__(self):
+        pass
+
+    def __exit__(self, type_, value, traceback):
+        pass
+
     def query(self, endpoint, sign=False, **kwargs):
         """Prepare a request for the exchange."""
         request_type = 'private' if sign else 'public'

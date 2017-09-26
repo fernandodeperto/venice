@@ -1,33 +1,31 @@
 class StrategyAPI:
-    def __init__(self, exchange_api):
-        self.exchange_api = exchange_api
+    def __init__(self):
 
     # Basic info
 
     def open(self):
         """Current and past open prices."""
-        return self.ohlc['open']
+        raise NotImplementedError
 
     def close(self):
         """Current and past close prices."""
-        return self.ohlc['close']
+        raise NotImplementedError
 
     def high(self):
         """Current and past high prices."""
-        return self.ohlc['high']
+        raise NotImplementedError
 
     def hl2(self):
         """Shortcut for (high + low)/2."""
-        return [(self.ohlc['high'][i] + self.ohlc['low'][i])/2 for i in range(0, len(self.ohlc))]
+        raise NotImplementedError
 
     def hlc3(self):
         """Shortcut for (high + low + close)/3."""
-        return [(self.ohlc['high'][i] + self.ohlc['low'][i] + self.ohlc['close'])/3 for i in
-                range(0, len(self.ohlc))]
+        raise NotImplementedError
 
     def low(self):
         "Current and past low prices."""
-        return self.ohlc['low']
+        raise NotImplementedError
 
     def min_tick(self):
         """Min tick value for the current symbol."""
@@ -35,20 +33,19 @@ class StrategyAPI:
 
     def ohl4(self):
         """Shortcut for (high + low + open + close)/4."""
-        return [(self.ohlc['open'][i] + self.ohlc['high'][i] + self.ohlc['low'][i] +
-                 self.ohlc['close'][i])/3 for i in range(0, len(self.ohlc))]
+        raise NotImplementedError
 
     def period(self):
         """Candle period in minutes."""
-        return self.period
+        raise NotImplementedError
 
     def volume(self):
         """Current and past volume bars."""
-        return self.volume
+        raise NotImplementedError
 
     def vwap(self):
         """Volume-weighted average price. Uses hlc3 as a source series."""
-        return self.vwap
+        raise NotImplementedError
 
     # Comission
 

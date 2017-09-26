@@ -25,6 +25,12 @@ class BitfinexConnection(ExchangeConnection):
 
         return self._request(method, path, headers=headers)
 
+    def query_public(self, endpoint):
+        return self.query('GET', endpoint)
+
+    def query_private(self, endpoint, **kwargs):
+        return self.query('PUT', endpoint, **kwargs)
+
     def _sign(self, path, params=None):
         if not params:
             params = {}

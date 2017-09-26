@@ -14,4 +14,5 @@ class ExampleStrategy(Strategy):
 
     def run(self):
         logger = logging.getLogger(__name__)
+
         logger.debug('Running example strategy')
