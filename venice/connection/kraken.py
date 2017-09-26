@@ -4,14 +4,14 @@ import hmac
 import urllib
 import urllib.parse
 
-from .api import ExchangeAPI
+from .connection import ExchangeConnection
 
 
 class KrakenConnectionError(Exception):
     pass
 
 
-class KrakenAPI(ExchangeAPI):
+class KrakenConnection(ExchangeConnection):
     def __init__(self, uri='https://api.kraken.com', version='0', key=None, secret=None,
                  timeout=10):
         super().__init__(uri, version, key, secret)

@@ -3,11 +3,11 @@ import hashlib
 import hmac
 import json
 
-from .api import ExchangeAPI
+from .connection import ExchangeConnection
 
 
-class BitfinexAPI(ExchangeAPI):
-    """Bitfinex API class."""
+class BitfinexConnection(ExchangeConnection):
+    """Bitfinex connection class."""
     def __init__(self, uri='https://api.bitfinex.com/', version='v1', key=None, secret=None,
                  timeout=5):
         super().__init__(uri, version, key, secret)

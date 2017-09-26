@@ -5,15 +5,15 @@ import requests
 import time
 
 
-class ExchangeAPIException(Exception):
+class ExchangeConnectionException(Exception):
     pass
 
 
-class ExchangeAPI(metaclass=abc.ABCMeta):
+class ExchangeConnection(metaclass=abc.ABCMeta):
     """
-    Base class for Exchange APIs."""
+    Base class for Exchange connection."""
     def __init__(self, uri, version=None, key=None, secret=None, timeout=5):
-        """Create ExchangeAPI object."""
+        """Create ExchangeConnection object."""
         self.uri = uri
         self.version = version
         self.key = key
