@@ -10,7 +10,7 @@ import time
 
 import argcomplete
 
-from . import api
+from . import exchange
 from . import strategy
 
 StrategyModule = collections.namedtuple(
@@ -51,12 +51,12 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
 
     # Initialize the API
-    api_classes = get_classes(api, api.ExchangeAPI)
+    exchange_classes = get_classes(exchange, exchange.ExchangeAPI)
 
-    if args.exchange not in api_classes.keys():
+    if args.exchange not in exchange_classes.keys():
         raise ValueError('invalid exchange')
 
-    chosen_api = api_classes[args.exchange]()
+    chosen_exchange = exchange_classes[args.exchange]()
 
     # Initialize the strategy
     chosen_strategy = strategy_classes[args.strategy](**vars(args))
@@ -66,8 +66,6 @@ def main():
 
     if not interval:
         raise ValueError('invalid interval', args.interval)
-
-    sys.exit()
 
     while run:
         start_time = time.time()
@@ -89,7 +87,7 @@ def main():
         buy and sell
         """
 
-        # chosen_strategy.run()
+        chosen_strategy.run()
 
         time.sleep(args.refresh - (time.time() - start_time))
 

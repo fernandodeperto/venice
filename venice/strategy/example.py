@@ -1,3 +1,5 @@
+import logging
+
 from .strategy import Strategy
 
 class ExampleStrategy(Strategy):
@@ -11,4 +13,5 @@ class ExampleStrategy(Strategy):
         pass
 
     def run(self):
-        pass
+        logger = logging.getLogger(__name__)
+        logger.debug('Running example strategy')
