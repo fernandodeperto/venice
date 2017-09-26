@@ -9,7 +9,7 @@ from venice.connection.bitfinex import BitfinexConnection
 logging.config.fileConfig('logging_tests.conf')
 
 
-class TestBitfinex(unittest.TestCase):
+class TestBitfinexConnection(unittest.TestCase):
     def test_public(self):
         api = BitfinexConnection()
 

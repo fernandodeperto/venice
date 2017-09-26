@@ -9,7 +9,7 @@ from venice.connection.kraken import KrakenConnection
 logging.config.fileConfig('logging_tests.conf')
 
 
-class TestKraken(unittest.TestCase):
+class TestKrakenConnection(unittest.TestCase):
     def test_public(self):
         api = KrakenConnection()
 
