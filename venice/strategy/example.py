@@ -2,6 +2,7 @@ import logging
 
 from .strategy import Strategy
 
+
 class ExampleStrategy(Strategy):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
