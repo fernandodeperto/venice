@@ -37,6 +37,14 @@ class ExchangeConnection(metaclass=abc.ABCMeta):
         """Abstract method used to send the request to the exchange."""
         raise NotImplementedError
 
+    def query_public(self, endpoint, **kwargs):
+        """Make a public request to the exchange."""
+        raise NotImplementedError
+
+    def query_private(self, endpoint, **kwargs):
+        """Make a private request to the exchange."""
+        raise NotImplementedError
+
     @staticmethod
     def _nonce():
         """Create a nonce based on the current time."""
@@ -49,7 +57,14 @@ class ExchangeConnection(metaclass=abc.ABCMeta):
         response = requests.request(method, self.uri + path, timeout=self.timeout, **kwargs)
 
         logger.debug(
-            'new request: method={}, path={}, kwargs={}, ok={}, text={}'.format(
-                method, path, kwargs, response.ok, response.text))
+            'new request: method={}, path={}, kwargs={}, ok={}, status_code={}, text={}'.format(
+                method, path, kwargs, response.ok, response.status_code, response.text))
 
-        return response.status_code, json.loads(response.text)
+        return response.ok, json.loads(response.text) if response.ok else None
+
+    @staticmethod
+    def _format_get_params(params):
+        return '?' + '&'.join(['{}={}'.format(x, params[x]) for x in params])
+
+    def _path(self, endpoint):
+        return '/'.join([self.version, endpoint])

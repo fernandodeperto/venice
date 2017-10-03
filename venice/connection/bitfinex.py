@@ -3,7 +3,9 @@ import hashlib
 import hmac
 import json
 
-from .connection import ExchangeConnection, ExchangeConnectionException
+from os.path import expanduser
+
+from .connection import ExchangeConnection
 
 
 class BitfinexConnection(ExchangeConnection):
@@ -12,24 +14,33 @@ class BitfinexConnection(ExchangeConnection):
                  timeout=5):
         super().__init__(uri, version, key, secret)
 
-    def query(self, method, endpoint, sign=False, **kwargs):
-        """Prepare a query for the exchange."""
-        path = '/'.join([self.version, endpoint])
-
-        headers = {
+        self.headers = {
             'User-Agent': 'venice/1.0'
         }
 
+    def __enter__(self):
+        self.load_key(expanduser('~') + '/.bitfinex.key')
+
+        return self
+
+    def query(self, method, endpoint, sign=False, **kwargs):
+        """Prepare a query for the exchange."""
+        path = self._path(endpoint)
+
+        headers = self.headers
+
         if sign:
             headers.update(self._sign(path, kwargs['params'] if 'params' in kwargs else None))
+        elif 'params' in kwargs:
+            path += self._format_get_params(kwargs['params'])
 
         return self._request(method, path, headers=headers)
 
-    def query_public(self, endpoint):
-        return self.query('GET', endpoint)
+    def query_public(self, endpoint, **kwargs):
+        return self.query('GET', endpoint, **kwargs)
 
     def query_private(self, endpoint, **kwargs):
-        return self.query('PUT', endpoint, **kwargs)
+        return self.query('POST', endpoint, sign=True, **kwargs)
 
     def _sign(self, path, params=None):
         if not params:
