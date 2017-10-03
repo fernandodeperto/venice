@@ -1,6 +1,7 @@
 class ExchangeAPIException(Exception):
     pass
 
+
 class ExchangeAPI:
     def __init__(self):
         pass

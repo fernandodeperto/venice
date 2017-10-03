@@ -1,5 +1,5 @@
 class OHLC:
-    def __init__(self, time, open_, high, low, close, vwap, volume, count):
+    def __init__(self, time, open_, high, low, close, volume, vwap=0, count=0):
         self.time = int(time)
         self.open_ = float(open_)
         self.high = float(high)
