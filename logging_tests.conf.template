@@ -1,15 +1,21 @@
 [loggers]
-keys=root
+keys=root, connection
 
 [handlers]
-keys=file_handler
+keys=file_handler, stream_handler
 
 [formatters]
 keys=formatter
 
 [logger_root]
 level=DEBUG
+handlers=stream_handler
+
+[logger_connection]
+level=DEBUG
 handlers=file_handler
+qualname=venice.connection
+propagate=0
 
 [handler_stream_handler]
 class=StreamHandler

@@ -4,6 +4,8 @@ import logging
 import requests
 import time
 
+from requests.exceptions import ReadTimeout
+
 
 class ExchangeConnectionException(Exception):
     pass
@@ -54,13 +56,22 @@ class ExchangeConnection(metaclass=abc.ABCMeta):
         """Send the resquest to the exchange."""
         logger = logging.getLogger(__name__)
 
-        response = requests.request(method, self.uri + path, timeout=self.timeout, **kwargs)
+        try:
+            response = requests.request(method, self.uri + path, timeout=self.timeout, **kwargs)
+        except ReadTimeout:
+            raise ExchangeConnectionException
 
         logger.debug(
             'new request: method={}, path={}, kwargs={}, ok={}, status_code={}, text={}'.format(
                 method, path, kwargs, response.ok, response.status_code, response.text))
 
-        return response.ok, json.loads(response.text) if response.ok else None
+        if not response.ok:
+            raise ExchangeConnectionException
+
+        try:
+            return json.loads(response.text)
+        except ValueError:
+            raise ExchangeConnectionException
 
     @staticmethod
     def _format_get_params(params):

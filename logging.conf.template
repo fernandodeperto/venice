@@ -1,5 +1,5 @@
 [loggers]
-keys=root, api
+keys=root, connection
 
 [handlers]
 keys=stream_handler, file_handler
@@ -11,10 +11,10 @@ keys=formatter
 level=DEBUG
 handlers=stream_handler
 
-[logger_api]
+[logger_connection]
 level=DEBUG
 handlers=file_handler
-qualname=venice.api.api
+qualname=venice.connection
 propagate=0
 
 [handler_stream_handler]

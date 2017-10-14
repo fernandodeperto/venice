@@ -2,6 +2,7 @@ import base64
 import hashlib
 import hmac
 import json
+import logging
 
 from os.path import expanduser
 
@@ -29,10 +30,11 @@ class BitfinexConnection(ExchangeConnection):
 
         headers = self.headers
 
+        if 'get_params' in kwargs:
+            path += self._format_get_params(kwargs['get_params'])
+
         if sign:
             headers.update(self._sign(path, kwargs['params'] if 'params' in kwargs else None))
-        elif 'params' in kwargs:
-            path += self._format_get_params(kwargs['params'])
 
         return self._request(method, path, headers=headers)
 
@@ -43,11 +45,15 @@ class BitfinexConnection(ExchangeConnection):
         return self.query('POST', endpoint, sign=True, **kwargs)
 
     def _sign(self, path, params=None):
+        logger = logging.getLogger(__name__)
+
         if not params:
             params = {}
 
         params['nonce'] = self._nonce()
         params['request'] = '/' + path
+
+        logger.debug('params={}'.format(params))
 
         encoded_params = base64.standard_b64encode(json.dumps(params).encode('utf-8'))
         hash_params = hmac.new(self.secret.encode('utf-8'), encoded_params, hashlib.sha384)

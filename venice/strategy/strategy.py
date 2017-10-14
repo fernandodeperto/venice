@@ -1,8 +1,8 @@
 import abc
 
 class Strategy(metaclass=abc.ABCMeta):
-    def __init__(self, **kwargs):
-        pass
+    def __init__(self, api, **kwargs):
+        self._api = api
 
     @staticmethod
     @abc.abstractmethod

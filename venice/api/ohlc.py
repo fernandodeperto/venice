@@ -12,3 +12,7 @@ class OHLC:
     def __str__(self):
         return '{} O:{}, H:{}, L:{}, C:{}, V:{}'.format(
             self.time, self.open_, self.high, self.low, self.close, self.volume)
+
+    def __repr__(self):
+        return 'OHLC(time={}, open={}, high={}, low={}, close={}, volume={})'.format(
+            self.time, self.open_, self.high, self.low, self.close, self.volume)
