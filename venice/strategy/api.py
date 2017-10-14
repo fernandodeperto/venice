@@ -1,44 +1,85 @@
+from collections import namedtuple
+
+from ..api.order import Order
+
+StrategyOrder = namedtuple('StrategyOrder', 'order, status')
+
+
 class StrategyAPI:
-    def __init__(self):
-        pass
+    def __init__(self, api, pair, period, capital, comission=0, live=0):
+        self.api = api
+        self._pair = pair
+        self._period = period
+        self._capital = capital
+        self._comission = comission
+        self.live = live
+
+        self.open_orders = {}
 
     # Basic info
 
+    def close(self):
+        return [x.close for x in self.ohlc()]
+
+    def high(self):
+        return [x.high for x in self.ohlc()]
+
     def hl2(self):
         """Shortcut for (high + low)/2."""
-        raise NotImplementedError
+        ohlc = self.api.ohlc(self.pair, self.period)
+        return [(x.high + x.low)/2 for x in ohlc]
 
     def hlc3(self):
         """Shortcut for (high + low + close)/3."""
-        raise NotImplementedError
+        ohlc = self.api.ohlc(self.pair, self.period)
+        return [(x.high + x.low + x.close)/3 for x in ohlc]
+
+    def low(self):
+        return [x.low for x in self.ohlc()]
 
     def ohl4(self):
         """Shortcut for (high + low + open + close)/4."""
-        raise NotImplementedError
+        ohlc = self.api.ohlc(self.pair, self.period)
+        return [(x.high + x.low + x.open_ + x.close)/4 for x in ohlc]
 
     def ohlc(self):
         """Ticker information."""
-        raise NotImplementedError
+        return self.api.ohlc(self.pair, self.period)
 
+    def open(self):
+        return [x.open_ for x in self.ohlc()]
+
+    @property
+    def pair(self):
+        """Trading pair."""
+        return self._pair
+
+    @property
     def period(self):
         """Candle period in minutes."""
-        raise NotImplementedError
+        return self._period
 
-    def vwap(self):
-        """Volume-weighted average price. Uses hlc3 as a source series."""
-        raise NotImplementedError
+    def ticker(self):
+        """Current ticker."""
+        return self.api.ticker(self.pair)
 
     # Comission
 
-    def comission_percent(self):
+    @property
+    def comission(self):
         """Comission percent."""
-        raise NotImplementedError
+        return self._comission
 
     # Trading statistics
 
     def avg_price(self):
         """Average entry price of current closed buy orders."""
         raise NotImplementedError
+
+    @property
+    def capital(self):
+        """The amount of initial capital set in the strategy properties."""
+        return self._capital
 
     def closed_trades(self):
         """Number of closed trades for the whole interval."""
@@ -54,10 +95,6 @@ class StrategyAPI:
 
     def gross_profit(self):
         """Total currency value of all completed winning trades."""
-        raise NotImplementedError
-
-    def initial_capital(self):
-        """The amount of initial capital set in the strategy properties."""
         raise NotImplementedError
 
     def loss_trades(self):
@@ -80,16 +117,56 @@ class StrategyAPI:
 
     def cancel(self, name):
         """Command to cancel/deactivate pending orders by referencing their names."""
-        raise NotImplementedError
+        if name in self.open_orders:
+            result = self.api.cancel_order(self.open_orders[name].order.id_)
 
     def cancel_all(self):
         """Command to cancel all pending orders."""
-        raise NotImplementedError
+        return [self.api.cancel_order(x.order.id_) for x in self.open_orders]
 
-    def order_buy(self, name, quantity, limit, stop):
+    def order_buy(self, name, quantity, limit=0, stop=0):
         """Command to place a buy order."""
-        raise NotImplementedError
 
-    def order_sell(self, name, quantity, limit, stop):
+        if name in self.open_orders:
+            pass
+
+        return self._order(name, 'buy', quantity, limit, stop)
+
+        return self.open_orders[name].order
+
+    def order_sell(self, name, quantity, limit=0, stop=0):
         """Command to place a sell order."""
-        raise NotImplementedError
+
+        if name in self.open_orders:
+            raise ValueError
+
+        self.open_orders[name] = StrategyOrder(
+            self._order(name, 'sell', quantity, limit, stop),
+            None)
+
+        return self.open_orders[name].order
+
+    # Internal methods
+
+    def _order(self, name, direction, quantity, limit=0, stop=0):
+        order_type = (
+            (self.api.STOP_AND_LIMIT if stop else self.api.LIMIT) if limit else
+            (self.api.STOP if stop else self.api.MARKET))
+
+        if self.live:
+            self.open_orders[name] = StrategyOrder(
+                self.api.add_order(self.pair, direction, order_type, quantity, limit, stop),
+                None)
+        else:
+            self.open_orders[name] = StrategyOrder(
+                Order(-1, direction, order_type, self.pair, quantity, limit, stop),
+                None)
+
+        return self.open_orders[name]
+
+    def _update(self):
+        for x in self.open_orders:
+            x.status = self.api.order_status(x.id_)
+
+        self.open_orders = {x: self.open_orders[x] for x in self.open_orders
+                            if x.status == self.api.OPEN}
