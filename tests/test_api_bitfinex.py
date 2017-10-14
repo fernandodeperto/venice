@@ -1,15 +1,75 @@
 import logging
 import logging.config
-import os
+import time
 import unittest
 
 from venice.api.bitfinex import BitfinexAPI
-
+from venice.api.api import ExchangeAPI
 
 logging.config.fileConfig('logging_tests.conf')
 
 
 class TestBitfinexAPI(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.api = BitfinexAPI()
+
+    def setUp(self):
+        time.sleep(5)
+
     def test_ticker(self):
-        with BitfinexAPI() as api:
-            code, text  = api.ticker('ltcusd')
+        logger = logging.getLogger(__name__)
+
+        result = self.api.ticker(ExchangeAPI.LTCUSD)
+        logger.debug(result)
+        self.assertIsNotNone(result)
+
+    def test_ohlc(self):
+        logger = logging.getLogger(__name__)
+
+        result = self.api.ohlc(ExchangeAPI.LTCUSD, ExchangeAPI.P15, limit=5)
+        logger.debug(result)
+        self.assertIsNotNone(result)
+
+    def test_order(self):
+        logger = logging.getLogger(__name__)
+
+        result = self.api.add_order(
+            ExchangeAPI.LTCUSD, ExchangeAPI.SELL, ExchangeAPI.STOP_AND_LIMIT, 0.1, price=100,
+            price2=20)
+        logger.debug(result)
+        self.assertIsNotNone(result)
+
+        result = self.api._cancel_orders([x.id_ for x in result])
+        logger.debug(result)
+        self.assertIsNotNone(result)
+
+    def test_active_orders(self):
+        logger = logging.getLogger(__name__)
+
+        result = self.api.order_history(ExchangeAPI.BTCUSD)
+        logger.debug(result)
+        self.assertIsNotNone(result)
+
+    def test_order_history(self):
+        logger = logging.getLogger(__name__)
+
+        result = self.api.order_history(limit=2)
+        logger.debug(result)
+        self.assertIsNotNone(result)
+
+    def test_order_status(self):
+        logger = logging.getLogger(__name__)
+
+        id_ = 4289014289
+        result = self.api.order_status(id_)
+        logger.debug(result)
+        self.assertIsNotNone(result)
+
+    def test_balance(self):
+        logger = logging.getLogger(__name__)
+
+        result = self.api.balance()
+        logger.debug(result)
+        self.assertIsNotNone(result)
