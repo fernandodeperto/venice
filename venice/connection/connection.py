@@ -7,7 +7,15 @@ import time
 from requests.exceptions import ReadTimeout
 
 
-class ExchangeConnectionException(Exception):
+class ExchangeConnectionTimeoutError(Exception):
+    pass
+
+
+class ExchangeConnectionResponseError(Exception):
+    pass
+
+
+class ExchangeConnectionJSONError(Exception):
     pass
 
 
@@ -59,19 +67,19 @@ class ExchangeConnection(metaclass=abc.ABCMeta):
         try:
             response = requests.request(method, self.uri + path, timeout=self.timeout, **kwargs)
         except ReadTimeout:
-            raise ExchangeConnectionException
+            raise ExchangeConnectionTimeoutError
 
         logger.debug(
             'new request: method={}, path={}, kwargs={}, ok={}, status_code={}, text={}'.format(
                 method, path, kwargs, response.ok, response.status_code, response.text))
 
         if not response.ok:
-            raise ExchangeConnectionException
+            raise ExchangeConnectionResponseError(response.text)
 
         try:
             return json.loads(response.text)
         except ValueError:
-            raise ExchangeConnectionException
+            raise ExchangeConnectionJSONError(response.text)
 
     @staticmethod
     def _format_get_params(params):
