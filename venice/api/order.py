@@ -5,6 +5,7 @@ class Order:
         self.direction = direction
         self.type_ = type_
         self.pair = pair
+        self.status = status
         self.volume = volume
         self.price = price
         self.price2 = price2

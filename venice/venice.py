@@ -5,7 +5,7 @@ import inspect
 import logging
 import logging.config
 import signal
-import sys
+# import sys
 import time
 
 import argcomplete
@@ -23,15 +23,14 @@ def main():
         nonlocal run
 
         logger = logging.getLogger(__name__)
-        logger.info("Signal {} received".format(sig))
+        logger.debug("signal {} received".format(sig))
 
         run = 0
 
     parser = argparse.ArgumentParser(description='bot based on a strategy')
-    parser.add_argument('-l', '--live', action='store_true', help="enable trade mode")
-    parser.add_argument('exchange', help='exchange to be used')
+    parser.add_argument('exchange', choices=['bitfinex'], help='exchange to be used')
     parser.add_argument('pair', choices=['btcusd', 'ltcusd', 'ethusd'], help='asset pair')
-    parser.add_argument('volume', type=float, help='main currency volume')
+    parser.add_argument('capital', type=float, help='available initial capital')
     parser.add_argument('period', help='candle period')
     parser.add_argument('refresh', type=int, help='time between updates')
 
@@ -61,14 +60,11 @@ def main():
     chosen_exchange = exchange_classes[args.exchange]()
 
     # Initialize the strategy API
-    strategy_api = strategy.StrategyAPI(chosen_exchange, args.pair, args.period, args.volume,
-                                        comission=0.001, live=0)
+    strategy_api = strategy.StrategyAPI(
+        chosen_exchange, args.pair, args.period, args.capital, comission=0.001)
 
     # Initialize the strategy
     chosen_strategy = strategy_classes[args.strategy](strategy_api, **vars(args))
-
-    # Candle interval
-    # period = parse_period(args.period)
 
     while run:
         start_time = time.time()
@@ -80,12 +76,13 @@ def main():
 
         time.sleep(args.refresh - (time.time() - start_time))
 
-        strategy_api._update()
+        strategy_api.update()
 
 
 def configure_parsers(parsers, classes):
     for class_name, class_value in classes.items():
-        parser = parsers.add_parser(class_name)
+        parser = parsers.add_parser(
+            class_name, description=class_value.descr_text(), help=class_value.help_text())
         class_value.configure_parser(parser)
 
 
@@ -98,8 +95,3 @@ def get_classes(base_module, class_super):
                 classes[module_name] = class_value
 
     return classes
-
-
-def parse_period(period):
-    period_keys = {'1': 1, '5': 5, '15': 15, '30': 30, '60': 60, '240': 240, '1H': 60, '4H': 240}
-    return period_keys[period]
