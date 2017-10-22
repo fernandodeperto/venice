@@ -1,53 +1,61 @@
-from collections import namedtuple
+from logging import getLogger
 
-from ..api.order import Order
+from ..connection import ExchangeConnectionException
 
-StrategyOrder = namedtuple('StrategyOrder', 'order, status')
+
+class StrategyAPIException(Exception):
+    pass
 
 
 class StrategyAPI:
-    def __init__(self, api, pair, period, capital, comission=0, live=0):
+    def __init__(self, api, pair, period, capital, comission=0):
         self.api = api
         self._pair = pair
         self._period = period
         self._capital = capital
         self._comission = comission
-        self.live = live
 
+        # Only one open order with each order name
         self.open_orders = {}
+
+        # Sell order needs to match a closed buy order
+        self.buy_orders = {}
 
     # Basic info
 
-    def close(self):
-        return [x.close for x in self.ohlc()]
+    def close(self, limit=10):
+        return [x.close for x in self.ohlc(limit=limit)]
 
-    def high(self):
-        return [x.high for x in self.ohlc()]
+    def currencies(self):
+        return self.api.currencies(self.pair)
 
-    def hl2(self):
+    def high(self, limit=10):
+        return [x.high for x in self.ohlc(limit=limit)]
+
+    def hl2(self, limit=10):
         """Shortcut for (high + low)/2."""
-        ohlc = self.api.ohlc(self.pair, self.period)
+        ohlc = self.api.ohlc(self.pair, self.period, limit=limit)
         return [(x.high + x.low)/2 for x in ohlc]
 
-    def hlc3(self):
+    def hlc3(self, limit=10):
         """Shortcut for (high + low + close)/3."""
-        ohlc = self.api.ohlc(self.pair, self.period)
+        ohlc = self.api.ohlc(self.pair, self.period, limit=limit)
         return [(x.high + x.low + x.close)/3 for x in ohlc]
 
-    def low(self):
-        return [x.low for x in self.ohlc()]
+    def low(self, limit=10):
+        return [x.low for x in self.ohlc(limit=limit)]
 
-    def ohl4(self):
+    def ohl4(self, limit=10):
         """Shortcut for (high + low + open + close)/4."""
-        ohlc = self.api.ohlc(self.pair, self.period)
+        ohlc = self.api.ohlc(self.pair, self.period, limit=limit)
         return [(x.high + x.low + x.open_ + x.close)/4 for x in ohlc]
 
-    def ohlc(self):
+    def ohlc(self, limit=10):
         """Ticker information."""
-        return self.api.ohlc(self.pair, self.period)
+        return self.api.ohlc(self.pair, self.period, limit=limit)
 
-    def open(self):
-        return [x.open_ for x in self.ohlc()]
+    def open(self, limit=10):
+        return [x.open_ for x in self.ohlc(limit=limit)]
 
     @property
     def pair(self):
@@ -59,11 +67,14 @@ class StrategyAPI:
         """Candle period in minutes."""
         return self._period
 
-    def ticker(self):
+    def ticker(self, limit=10):
         """Current ticker."""
         return self.api.ticker(self.pair)
 
-    # Comission
+    # Comission and balance
+
+    def balance(self):
+        return self.api.balance(self.pair)
 
     @property
     def comission(self):
@@ -117,56 +128,113 @@ class StrategyAPI:
 
     def cancel(self, name):
         """Command to cancel/deactivate pending orders by referencing their names."""
-        if name in self.open_orders:
-            result = self.api.cancel_order(self.open_orders[name].order.id_)
+        logger = getLogger(__name__)
+
+        if name not in self.open_orders:
+            raise StrategyAPIException
+
+        try:
+            self.api.cancel_order(self.open_orders[name].id_)
+
+        except:
+            raise StrategyAPIException
+
+        del self.open_orders[name]
+
+        logger.info('cancel order {}: {}'.format(name, self.open_orders[name]))
 
     def cancel_all(self):
         """Command to cancel all pending orders."""
-        return [self.api.cancel_order(x.order.id_) for x in self.open_orders]
+        for name in self.open_orders:
+            self.cancel(name)
 
-    def order_buy(self, name, quantity, limit=0, stop=0):
-        """Command to place a buy order."""
-
-        if name in self.open_orders:
-            pass
-
-        return self._order(name, 'buy', quantity, limit, stop)
-
-        return self.open_orders[name].order
-
-    def order_sell(self, name, quantity, limit=0, stop=0):
-        """Command to place a sell order."""
+    def order(self, name, direction, volume=0, limit=0, stop=0):
+        logger = getLogger(__name__)
 
         if name in self.open_orders:
-            raise ValueError
+            try:
+                self.cancel(name)
 
-        self.open_orders[name] = StrategyOrder(
-            self._order(name, 'sell', quantity, limit, stop),
-            None)
+            except:
+                raise StrategyAPIException
 
-        return self.open_orders[name].order
+        if direction == self.api.BUY and name in self.buy_orders:
+            raise StrategyAPIException
 
-    # Internal methods
+        if direction == self.api.SELL and name not in self.buy_orders:
+            raise StrategyAPIException
 
-    def _order(self, name, direction, quantity, limit=0, stop=0):
-        order_type = (
-            (self.api.STOP_AND_LIMIT if stop else self.api.LIMIT) if limit else
-            (self.api.STOP if stop else self.api.MARKET))
+        if limit and stop:
+            raise StrategyAPIException
 
-        if self.live:
-            self.open_orders[name] = StrategyOrder(
-                self.api.add_order(self.pair, direction, order_type, quantity, limit, stop),
-                None)
+        if limit:
+            price = limit
+            price2 = 0
+            order_type = self.api.LIMIT
+
+        elif stop:
+            price = stop
+            price2 = 0
+            order_type = self.api.STOP
+
         else:
-            self.open_orders[name] = StrategyOrder(
-                Order(-1, direction, order_type, self.pair, quantity, limit, stop),
-                None)
+            price = 0
+            price2 = 0
+            order_type = self.api.MARKET
 
-        return self.open_orders[name]
+        try:
+            order_status = self.api.add_order(
+                self.pair, direction, order_type, volume=volume, price=price, price2=price2)
 
-    def _update(self):
-        for x in self.open_orders:
-            x.status = self.api.order_status(x.id_)
+        except:
+            raise StrategyAPIException
 
-        self.open_orders = {x: self.open_orders[x] for x in self.open_orders
-                            if x.status == self.api.OPEN}
+        self.open_orders[name] = order_status
+
+        logger.info('new {} order {}: {}'.format(direction, name, order_status))
+
+    def order_buy(self, name, volume=0, limit=0, stop=0):
+        """Command to place a buy order."""
+        self.order(name, 'buy', volume=volume, limit=limit, stop=stop)
+
+    def order_sell(self, name, limit=0, stop=0):
+        """Command to place a sell order."""
+        if name not in self.buy_orders:
+            raise StrategyAPIException('buy order with name {} does not exist'.format(name))
+
+        volume = self.buy_orders[name].volume
+        self.order(name, 'sell', volume=volume, limit=limit, stop=stop)
+
+    def update(self):
+        logger = getLogger(__name__)
+
+        open_orders = {}
+
+        for name in self.open_orders:
+            try:
+                order_status = self.api.order_status(self.open_orders[name].id_)
+
+            except:
+                open_orders[name] = self.open_orders[name]
+
+            else:
+                if order_status.status == self.api.OPEN:
+                    open_orders[name] = order_status
+
+                elif order_status.status == self.api.CLOSED:
+                    if order_status.direction == self.api.BUY:
+                        if name in self.buy_orders:
+                            raise StrategyAPIException
+
+                        self.buy_orders[name] = order_status
+
+                    else:  # Sell order
+                        if name not in self.buy_orders:
+                            raise StrategyAPIException
+
+                        del self.buy_orders[name]
+
+                logger.info('{} order {} {}: {}'.format(
+                    order_status.direction, name, order_status.status, order_status))
+
+        self.open_orders = open_orders

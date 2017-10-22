@@ -1,19 +1,25 @@
-import abc
+from abc import ABC, ABCMeta, abstractmethod
 
-class Strategy(metaclass=abc.ABCMeta):
+
+class Strategy(metaclass=ABCMeta):
     def __init__(self, api, **kwargs):
-        self._api = api
+        self.api = api
 
     @staticmethod
-    @abc.abstractmethod
+    @abstractmethod
+    def descr_text():
+        raise NotImplementedError
+
+    @staticmethod
+    @abstractmethod
     def help_text():
         raise NotImplementedError
 
     @staticmethod
-    @abc.abstractmethod
+    @abstractmethod
     def configure_parser(parser):
         raise NotImplementedError
 
-    @abc.abstractmethod
+    @abstractmethod
     def run():
         raise NotImplementedError
