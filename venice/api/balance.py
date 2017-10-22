@@ -1,4 +1,5 @@
 class Balance:
+    # TODO Fix the available parameter
     def __init__(self, currency, amount, available=-1, type_='exchange'):
         self.currency = currency
         self.amount = amount

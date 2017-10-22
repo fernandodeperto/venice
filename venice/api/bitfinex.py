@@ -38,20 +38,14 @@ class BitfinexAPI(ExchangeAPI):
     }
 
     PAIR_KEYS = {
-        ExchangeAPI.BTCEUR: 'btceur',
         ExchangeAPI.BTCUSD: 'btcusd',
-        ExchangeAPI.ETUEUR: 'etheur',
         ExchangeAPI.ETHUSD: 'ethusd',
-        ExchangeAPI.LTCEUR: 'ltceur',
         ExchangeAPI.LTCUSD: 'ltcusd',
     }
 
     PAIR_KEYS_REVERSE = {
-        'btceur': ExchangeAPI.BTCEUR,
         'btcusd': ExchangeAPI.BTCUSD,
-        'etheur': ExchangeAPI.ETUEUR,
         'ethusd': ExchangeAPI.ETHUSD,
-        'ltceur': ExchangeAPI.LTCEUR,
         'ltcusd': ExchangeAPI.LTCUSD,
     }
 
@@ -81,6 +75,12 @@ class BitfinexAPI(ExchangeAPI):
         'sell': ExchangeAPI.SELL,
     }
 
+    PAIR_CURRENCY_KEYS = {
+        ExchangeAPI.BTCUSD: ('btc', 'usd'),
+        ExchangeAPI.ETHUSD: ('eth', 'usd'),
+        ExchangeAPI.LTCUSD: ('ltc', 'usd'),
+    }
+
     def __init__(self):
         pass
 
@@ -102,12 +102,16 @@ class BitfinexAPI(ExchangeAPI):
         result = self._active_orders()
         return [self._format_order(x) for x in result if not pair or x['symbol'] == pair]
 
-    def add_order(self, pair, direction, type_, volume, price=0, price2=0):
-        oco = type_ == self.STOP_AND_LIMIT and price2 > 0
+    def add_order(self, pair, direction, type_, volume=0, price=0, price2=0):
+        oco = type_ == self.STOP_AND_LIMIT
+        post_only = type_ == ExchangeAPI.LIMIT
+
+        if type_ == ExchangeAPI.MARKET:
+            price = 1
 
         result = self._order(
-            self.PAIR_KEYS[pair], volume, self.DIRECTION_KEYS[direction], self.TYPE_KEYS[type_],
-            price, post_only=True, oco=oco, oco_price=price2)
+            self.PAIR_KEYS[pair], self.DIRECTION_KEYS[direction], self.TYPE_KEYS[type_],
+            volume=volume, price=price, post_only=post_only, oco=oco, oco_price=price2)
 
         orders = [self._format_order(result)]
 
@@ -116,21 +120,27 @@ class BitfinexAPI(ExchangeAPI):
 
         return orders
 
-    def balance(self):
+    def balance(self, pair=None):
         result = self._wallet_balance()
+        balance = {x['currency']: self._format_balance(x) for x in result}
 
-        return [self._format_balance(x) for x in result]
+        if pair:
+            currency, quote = self.PAIR_CURRENCY_KEYS[pair]
+            return {
+                currency: balance[currency],
+                quote: balance[quote],
+            }
+
+        return balance
 
     def cancel_all_orders(self):
         raise NotImplementedError
 
     def cancel_order(self, id_):
-        result = self._cancel_orders([id_])
-        return self._format_order_status(result)
+        self._cancel_orders([id_])
 
     def cancel_orders(self, ids):
-        result = self._cancel_orders(ids)
-        return self._format_order_status(result)
+        self._cancel_orders(ids)
 
     def order_history(self, pair=None, limit=100):
         result = self._order_history(limit)
@@ -182,8 +192,8 @@ class BitfinexAPI(ExchangeAPI):
                 'order_ids': order_ids,
             })
 
-    def _order(self, pair, amount, side, type_, price=0, hidden=False, post_only=False,
-               use_all=False, oco=False, oco_price=0):
+    def _order(self, pair, side, type_, volume=0, price=0, post_only=True, oco=False,
+               oco_price=0):
         """Submit a new order.
 
         Params
@@ -232,13 +242,12 @@ class BitfinexAPI(ExchangeAPI):
 
         params = {
             'symbol': pair,
-            'amount': str(amount),
+            'amount': str(volume),
             'side': side,
             'type': type_,
             'price': str(price),
-            'is_hidden': hidden,
+            'use_all_available': 0 if volume else 1,
             'is_postonly': post_only,
-            'use_all_available': use_all,
             'ocoorder': oco,
             'buy_price_oco': str(oco_price) if oco and side == 'buy' else '0',
             'sell_price_oco': str(oco_price) if oco and side == 'sell' else '0',
@@ -356,8 +365,6 @@ class BitfinexAPI(ExchangeAPI):
             return c.query_public(
                 'candles/trade:' + ':'.join([time_frame, pair]) + '/' + section, get_params=params)
         return 't' + pair.upper()
-
-    # v2 endpoints - private
 
     # Internal methods
 

@@ -56,7 +56,7 @@ class ExchangeAPI:
     def add_order(self, pair, direction, type_, volume, price=0, price2=0):
         raise NotImplementedError
 
-    def balance(self):
+    def balance(self, pair=None):
         raise NotImplementedError
 
     def cancel_all_orders(self):
@@ -67,6 +67,10 @@ class ExchangeAPI:
 
     def cancel_orders(self, ids):
         raise NotImplementedError
+
+    @staticmethod
+    def currencies(pair):
+        return pair[0:3], pair[3:6]
 
     def ohlc(self, pair, interval, limit=100):
         raise NotImplementedError
