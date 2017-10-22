@@ -1,35 +1,31 @@
 import logging
 
 from .strategy import Strategy
+from .indicator import crossover, crossunder, sma
 
 
 class ExampleStrategy(Strategy):
-    def __init__(self, api, intensity, **kwargs):
+    def __init__(self, api, **kwargs):
         super().__init__(api, **kwargs)
 
-        self._intensity = intensity
+        self.go = 1
 
+    @staticmethod
+    def descr_text():
+        return 'Example strategy used to test the strategy API'
+
+    @staticmethod
     def help_text():
         return 'Example strategy'
 
     def configure_parser(parser):
-        parser.add_argument('intensity', type=int, help='strategy intensity')
+        pass
 
     def run(self):
         logger = logging.getLogger(__name__)
 
-        # ticker = self._api.ticker()
-        # logger.debug('Ticker: {}'.format(ticker))
-
-        # ohlc = self._api.ohlc()
-        # logger.debug('OHLC: {}'.format(ohlc))
-
-        # hl2 = self._api.hl2()
-        # logger.debug('hl2={}'.format(hl2))
-
-        # order = self._api.order_buy('TestOrder', 1, limit=30, stop=60)
-        # logger.debug('order={}'.format(order))
-
-        logger.debug('Running example strategy with intensity {}'.format(self._intensity))
+        if self.go == 1:
+            self.api.order_buy('TestOrder', 0.1, stop=69)
+            self.go = 0
 
         return None
