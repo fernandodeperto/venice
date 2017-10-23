@@ -1,15 +1,14 @@
 from logging import getLogger
 
-from ..connection import ExchangeConnectionException
 
-
-class StrategyAPIException(Exception):
+class StrategyAPIError(Exception):
     pass
 
 
 class StrategyAPI:
     def __init__(self, api, pair, period, capital, comission=0):
         self.api = api
+
         self._pair = pair
         self._period = period
         self._capital = capital
@@ -131,13 +130,9 @@ class StrategyAPI:
         logger = getLogger(__name__)
 
         if name not in self.open_orders:
-            raise StrategyAPIException
+            raise StrategyAPIError
 
-        try:
-            self.api.cancel_order(self.open_orders[name].id_)
-
-        except:
-            raise StrategyAPIException
+        self.api.cancel_order(self.open_orders[name].id_)
 
         del self.open_orders[name]
 
@@ -152,20 +147,16 @@ class StrategyAPI:
         logger = getLogger(__name__)
 
         if name in self.open_orders:
-            try:
-                self.cancel(name)
-
-            except:
-                raise StrategyAPIException
+            self.cancel(name)
 
         if direction == self.api.BUY and name in self.buy_orders:
-            raise StrategyAPIException
+            raise StrategyAPIError
 
         if direction == self.api.SELL and name not in self.buy_orders:
-            raise StrategyAPIException
+            raise StrategyAPIError
 
         if limit and stop:
-            raise StrategyAPIException
+            raise StrategyAPIError
 
         if limit:
             price = limit
@@ -182,12 +173,8 @@ class StrategyAPI:
             price2 = 0
             order_type = self.api.MARKET
 
-        try:
-            order_status = self.api.add_order(
-                self.pair, direction, order_type, volume=volume, price=price, price2=price2)
-
-        except:
-            raise StrategyAPIException
+        order_status = self.api.add_order(
+            self.pair, direction, order_type, volume=volume, price=price, price2=price2)
 
         self.open_orders[name] = order_status
 
@@ -200,7 +187,7 @@ class StrategyAPI:
     def order_sell(self, name, limit=0, stop=0):
         """Command to place a sell order."""
         if name not in self.buy_orders:
-            raise StrategyAPIException('buy order with name {} does not exist'.format(name))
+            raise StrategyAPIError
 
         volume = self.buy_orders[name].volume
         self.order(name, 'sell', volume=volume, limit=limit, stop=stop)
@@ -224,13 +211,13 @@ class StrategyAPI:
                 elif order_status.status == self.api.CLOSED:
                     if order_status.direction == self.api.BUY:
                         if name in self.buy_orders:
-                            raise StrategyAPIException
+                            raise StrategyAPIError
 
                         self.buy_orders[name] = order_status
 
                     else:  # Sell order
                         if name not in self.buy_orders:
-                            raise StrategyAPIException
+                            raise StrategyAPIError
 
                         del self.buy_orders[name]
 
