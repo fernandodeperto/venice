@@ -134,9 +134,9 @@ class StrategyAPI:
 
         self.api.cancel_order(self.open_orders[name].id_)
 
-        del self.open_orders[name]
-
         logger.info('cancel order {}: {}'.format(name, self.open_orders[name]))
+
+        del self.open_orders[name]
 
     def cancel_all(self):
         """Command to cancel all pending orders."""
@@ -173,12 +173,15 @@ class StrategyAPI:
             price2 = 0
             order_type = self.api.MARKET
 
-        order_status = self.api.add_order(
+        order_statuses = self.api.add_order(
             self.pair, direction, order_type, volume=volume, price=price, price2=price2)
 
-        self.open_orders[name] = order_status
+        if len(order_statuses) > 1:
+            raise StrategyAPIError
 
-        logger.info('new {} order {}: {}'.format(direction, name, order_status))
+        self.open_orders[name] = order_statuses[0]
+
+        logger.info('new {} order {}: {}'.format(direction, name, self.open_orders[name]))
 
     def order_buy(self, name, volume=0, limit=0, stop=0):
         """Command to place a buy order."""

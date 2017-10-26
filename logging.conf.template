@@ -1,5 +1,5 @@
 [loggers]
-keys=root, connection
+keys=root, venice, connection
 
 [handlers]
 keys=stream_handler, file_handler
@@ -8,8 +8,14 @@ keys=stream_handler, file_handler
 keys=formatter
 
 [logger_root]
+handlers=stream_handler
+level=DEBUG
+
+[logger_venice]
 level=DEBUG
 handlers=stream_handler
+qualname=venice
+propagate=0
 
 [logger_connection]
 level=DEBUG

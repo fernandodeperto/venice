@@ -30,42 +30,19 @@ class SMAStrategy(Strategy):
         logger = logging.getLogger(__name__)
 
         ticker = self.api.ticker()
-        logger.debug(ticker)
-
-        price = ticker.last
-        logger.debug(price)
-
-        available_currency = self.api.capital/price
-        logger.debug(available_currency)
-
-        if self.step == 0:
-            self.api.order_buy('SMATestorder', volume=0.1, limit=40)
-
-            self.step = 1
-
-        elif self.step == 1:
-            self.api.cancel('SMATestorder')
-
-            self.step = 2
-
-        elif self.step == 2:
-            pass
-
-        return None
+        volume = self.api.capital/ticker.last
 
         close = [x.close for x in self.api.ohlc()]
         close.reverse()
-        sma_fast = sma(close, 7)
-        sma_slow = sma(close, 20)
+        sma_fast = sma(close, self.fast_sma)
+        sma_slow = sma(close, self.slow_sma)
 
         logger.debug('close={}, sma_fast={}, sma_slow={}, crossover={}, crossunder={}'.format(
             close[-1], sma_fast[-1], sma_slow[-1], crossover(sma_fast, sma_slow),
             crossunder(sma_fast, sma_slow)))
 
         if crossover(sma_fast, sma_slow):
-            # self.api.order_buy('SMALong')
-            logger.debug('order_buy')
+            self.api.order_buy('SMA', volume=volume)
 
         elif crossunder(sma_fast, sma_slow):
-            # self.api.order_sell('SMAShort')
-            logger.debug('order_sell')
+            self.api.order_sell('SMA')

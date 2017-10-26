@@ -17,6 +17,8 @@ StrategyModule = collections.namedtuple(
     'StrategyModule',
     'module_name class_name value')
 
+MIN_SLEEP = 5
+
 
 def main():
     def signal_handler(sig, frame):
@@ -74,7 +76,7 @@ def main():
         if new_strategy:
             chosen_strategy = new_strategy
 
-        time.sleep(args.refresh - (time.time() - start_time))
+        time.sleep(max(args.refresh - (time.time() - start_time), MIN_SLEEP))
 
         strategy_api.update()
 
