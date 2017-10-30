@@ -86,7 +86,7 @@ class BitfinexAPI(ExchangeAPI):
     def __init__(self):
         super().__init__()
 
-        self._pairs = {x['pair']: self._format_pair(x) for x in self._symbols()}
+        self._pairs = []
 
     # Public
 
@@ -98,11 +98,10 @@ class BitfinexAPI(ExchangeAPI):
         return ohlc[::-1]
 
     @property
-    def pair(self, pair):
-        return self._pairs[pair]
-
-    @property
     def pairs(self):
+        if not self._pairs:
+            self._pairs = {x['pair']: self._format_pair(x) for x in self._symbols()}
+
         return self._pairs
 
     def ticker(self, pair):
@@ -122,7 +121,7 @@ class BitfinexAPI(ExchangeAPI):
         if type_ == ExchangeAPI.MARKET:
             price = 1
 
-        decimal_places = util.decimal_places(self._pairs[pair].precision)
+        decimal_places = util.decimal_places(self.pairs[pair].precision)
 
         result = self._order(
             self.PAIR_KEYS[pair], self.DIRECTION_KEYS[direction], self.TYPE_KEYS[type_],
@@ -138,7 +137,8 @@ class BitfinexAPI(ExchangeAPI):
 
     def balance(self, pair=None):
         result = self._wallet_balance()
-        balance = {x['currency']: self._format_balance(x) for x in result}
+        balance = {x['currency']: self._format_balance(x) for x in result if x['currency'] in
+                   self.CURRENCY_KEYS_REVERSE}
 
         if pair:
             currency, quote = self.PAIR_CURRENCY_KEYS[pair]

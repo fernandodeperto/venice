@@ -3,6 +3,8 @@ import logging.config
 import time
 import unittest
 
+from  decimal import Decimal
+
 from venice.api.bitfinex import BitfinexAPI
 from venice.api.api import ExchangeAPI
 
@@ -36,8 +38,7 @@ class TestBitfinexAPI(unittest.TestCase):
         logger = logging.getLogger(__name__)
 
         result = self.api.add_order(
-            ExchangeAPI.LTCUSD, ExchangeAPI.SELL, ExchangeAPI.STOP_AND_LIMIT, 0.1, price=100,
-            price2=20)
+            ExchangeAPI.LTCUSD, ExchangeAPI.BUY, ExchangeAPI.LIMIT, Decimal('0.2'), price=20)
         logger.debug(result)
         self.assertIsNotNone(result)
 

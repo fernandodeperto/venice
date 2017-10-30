@@ -8,7 +8,7 @@ import signal
 import sys
 import time
 
-from decimal import getcontext
+from decimal import getcontext, setcontext, BasicContext, FloatOperation
 
 import argcomplete
 
@@ -53,6 +53,11 @@ def main():
 
     logging.config.fileConfig('logging.conf')
     logger = logging.getLogger(__name__)
+
+    # Decimal module initialization
+    setcontext(BasicContext)
+    getcontext().prec = 28
+    getcontext().traps[FloatOperation] = 1
 
     # Basic initialization
     run = 1

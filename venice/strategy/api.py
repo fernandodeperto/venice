@@ -1,4 +1,3 @@
-from decimal import setcontext, BasicContext, getcontext
 from logging import getLogger
 
 from venice.util import decimal_places
@@ -25,9 +24,6 @@ class StrategyAPI:
 
         self._precision = self.api.pairs[self._pair].precision
         self._decimal_places = decimal_places(self._precision)
-
-        setcontext(BasicContext)
-        getcontext().prec = 28
 
     # Basic info
 
