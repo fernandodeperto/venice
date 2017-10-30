@@ -31,7 +31,7 @@ class SMAStrategy(Strategy):
 
         # ticker = self.api.ticker()
         # volume = self.api.capital/ticker.last
-        close = [x.close for x in self.api.ohlc()]
+        close = [x.close for x in self.api.ohlc(limit=self.slow_sma)]
         sma_fast = sma(close, self.fast_sma)
         sma_slow = sma(close, self.slow_sma)
 
@@ -42,8 +42,8 @@ class SMAStrategy(Strategy):
 
         if crossover(sma_fast, sma_slow):
             # self.api.order_buy('SMA', volume=volume)
-            logger.debug('buy order')
+            logger.info('buy order')
 
         elif crossunder(sma_fast, sma_slow):
             # self.api.order_sell('SMA')
-            logger.debug('sell order')
+            logger.info('sell order')
