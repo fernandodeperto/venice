@@ -1,7 +1,9 @@
 import logging
 
+from decimal import getcontext
+
 from .strategy import Strategy
-from .indicator import crossover, crossunder, sma
+from .indicator import crossover, crossunder, sma, mom, rsi
 
 
 class SMAStrategy(Strategy):
@@ -31,12 +33,12 @@ class SMAStrategy(Strategy):
 
         # ticker = self.api.ticker()
         # volume = self.api.capital/ticker.last
-        close = [x.close for x in self.api.ohlc(limit=self.slow_sma)]
+        close = [x.close for x in self.api.ohlc(limit=80)]
         sma_fast = sma(close, self.fast_sma)
         sma_slow = sma(close, self.slow_sma)
 
         logger.debug(
-            'close={}, sma=({:.5f}, {:.5f}), crossover={}, crossunder={}'.format(
+            'close={}, sma=({}, {}), crossover={}, crossunder={}'.format(
                 close[-1], sma_fast[-2] - sma_slow[-2], sma_fast[-1] - sma_slow[-1],
                 crossover(sma_fast, sma_slow), crossunder(sma_fast, sma_slow)))
 

@@ -8,6 +8,8 @@ import signal
 import sys
 import time
 
+from decimal import getcontext, setcontext, BasicContext, FloatOperation
+
 import argcomplete
 
 from . import api
@@ -50,7 +52,12 @@ def main():
     args = parser.parse_args()
 
     logging.config.fileConfig('logging.conf')
-    # logger = logging.getLogger(__name__)
+    logger = logging.getLogger(__name__)
+
+    # Decimal module initialization
+    setcontext(BasicContext)
+    getcontext().prec = 28
+    getcontext().traps[FloatOperation] = 1
 
     # Basic initialization
     run = 1
@@ -74,11 +81,11 @@ def main():
         try:
             new_strategy = chosen_strategy.run()
 
-        except:
-            pass
+            if new_strategy:
+                chosen_strategy = new_strategy
 
-        if new_strategy:
-            chosen_strategy = new_strategy
+        except Exception as e:
+            logger.warning(e)
 
         time.sleep(max(args.refresh - (time.time() - start_time), MIN_SLEEP))
 

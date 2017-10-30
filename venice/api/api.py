@@ -89,5 +89,8 @@ class ExchangeAPI:
     def order_status(self, id_):
         raise NotImplementedError
 
+    def pairs(self):
+        raise NotImplementedError
+
     def ticker(self, pair):
         raise NotImplementedError

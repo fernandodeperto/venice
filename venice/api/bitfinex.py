@@ -1,3 +1,6 @@
+from decimal import Decimal
+
+from venice import util
 from venice.connection.bitfinex import BitfinexConnection
 
 from .api import ExchangeAPI
@@ -5,6 +8,7 @@ from .ohlc import OHLC
 from .order import Order
 from .ticker import Ticker
 from .balance import Balance
+from .pair import Pair
 
 
 class BitfinexAPI(ExchangeAPI):
@@ -80,7 +84,9 @@ class BitfinexAPI(ExchangeAPI):
     }
 
     def __init__(self):
-        pass
+        super().__init__()
+
+        self._pairs = []
 
     # Public
 
@@ -90,6 +96,13 @@ class BitfinexAPI(ExchangeAPI):
             limit=limit)
         ohlc = [self._format_ohlc(x) for x in result]
         return ohlc[::-1]
+
+    @property
+    def pairs(self):
+        if not self._pairs:
+            self._pairs = {x['pair']: self._format_pair(x) for x in self._symbols()}
+
+        return self._pairs
 
     def ticker(self, pair):
         result = self._ticker(pair)
@@ -108,9 +121,12 @@ class BitfinexAPI(ExchangeAPI):
         if type_ == ExchangeAPI.MARKET:
             price = 1
 
+        decimal_places = util.decimal_places(self.pairs[pair].precision)
+
         result = self._order(
             self.PAIR_KEYS[pair], self.DIRECTION_KEYS[direction], self.TYPE_KEYS[type_],
-            volume=volume, price=price, post_only=post_only, oco=oco, oco_price=price2)
+            volume=volume.quantize(decimal_places), price=price, post_only=post_only, oco=oco,
+            oco_price=price2)
 
         orders = [self._format_order(result)]
 
@@ -121,7 +137,8 @@ class BitfinexAPI(ExchangeAPI):
 
     def balance(self, pair=None):
         result = self._wallet_balance()
-        balance = {x['currency']: self._format_balance(x) for x in result}
+        balance = {x['currency']: self._format_balance(x) for x in result if x['currency'] in
+                   self.CURRENCY_KEYS_REVERSE}
 
         if pair:
             currency, quote = self.PAIR_CURRENCY_KEYS[pair]
@@ -150,6 +167,24 @@ class BitfinexAPI(ExchangeAPI):
         return self._format_order(result)
 
     # v1 endpoints - public
+
+    def _symbols(self):
+        """Return pair's details.
+
+        Response details
+        ================
+
+        pair    [string]    The pair code
+        price_precision [integer]   Maximum number of significant digits for price in this pair
+        initial_margin  [decimal]   Initial margin required to open a position in this pair
+        minimum_margin  [decimal]   Minimal margin to maintain (in %)
+        maximum_order_size  [decimal]   Maximum order size of the pair
+        minimum_order_size  [decimal]   Minimum order size of the pair
+        expiration  [string]    Expiration date for limited contracts/pairs
+        """
+
+        with BitfinexConnection() as c:
+            return c.query_public('symbols_details')
 
     def _ticker(self, pair):
         """Return ticker.
@@ -383,10 +418,10 @@ class BitfinexAPI(ExchangeAPI):
             BitfinexAPI.TYPE_KEYS_REVERSE[result['type']],
             BitfinexAPI.PAIR_KEYS_REVERSE[result['symbol']],
             status,
-            result['original_amount'],
-            price=result['price'],
-            avg_price=result['avg_execution_price'],
-            remaining=result['remaining_amount'])
+            Decimal(result['original_amount']),
+            price=Decimal(result['price']),
+            avg_price=Decimal(result['avg_execution_price']),
+            remaining=Decimal(result['remaining_amount']))
 
     @staticmethod
     def _format_oco_order(result):
@@ -395,20 +430,43 @@ class BitfinexAPI(ExchangeAPI):
             result['side'],
             ExchangeAPI.STOP,
             BitfinexAPI.PAIR_KEYS_REVERSE[result['symbol']],
-            result['original_amount'])
+            Decimal(result['original_amount']))
 
     @staticmethod
     def _format_balance(result):
         return Balance(
-            BitfinexAPI.CURRENCY_KEYS_REVERSE[result['currency']], result['amount'],
-            result['available'], result['type'])
+            BitfinexAPI.CURRENCY_KEYS_REVERSE[result['currency']],
+            Decimal(result['amount']),
+            Decimal(result['available']),
+            result['type'])
 
     @staticmethod
     def _format_ticker(result):
         return Ticker(
-            result['timestamp'], result['ask'], result['bid'], result['last_price'],
-            low=result['low'], high=result['high'], volume=result['volume'])
+            result['timestamp'],
+            Decimal(result['ask']),
+            Decimal(result['bid']),
+            Decimal(result['last_price']),
+            low=Decimal(result['low']),
+            high=Decimal(result['high']),
+            volume=Decimal(result['volume']))
 
     @staticmethod
     def _format_ohlc(result):
-        return OHLC(result[0], result[1], result[3], result[4], result[2], result[5])
+        return OHLC(
+            result[0],
+            Decimal(result[1]),
+            Decimal(result[3]),
+            Decimal(result[4]),
+            Decimal(result[2]),
+            Decimal(result[5]),
+        )
+
+    @staticmethod
+    def _format_pair(result):
+        return Pair(
+            result['pair'],
+            result['price_precision'],
+            Decimal(result['minimum_order_size']),
+            Decimal(result['maximum_order_size']),
+        )

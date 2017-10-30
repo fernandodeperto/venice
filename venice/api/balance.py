@@ -1,9 +1,11 @@
+from decimal import Decimal
+
+
 class Balance:
-    # TODO Fix the available parameter
-    def __init__(self, currency, amount, available=-1, type_='exchange'):
+    def __init__(self, currency, amount, available=None, type_='exchange'):
         self.currency = currency
-        self.amount = amount
-        self.available = available
+        self.amount = Decimal(amount)
+        self.available = Decimal(available) if available else None
         self.type_ = type_
 
     def __repr__(self):
@@ -12,5 +14,5 @@ class Balance:
 
     def __str__(self):
         return ('{}/{} {}'.format(
-            self.available, self.amount, self.currency) if self.available != -1 else
+            self.available, self.amount, self.currency) if self.available else
             '{} {}'.format(self.amount, self.currency))
