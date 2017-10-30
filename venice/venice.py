@@ -5,7 +5,7 @@ import inspect
 import logging
 import logging.config
 import signal
-# import sys
+import sys
 import time
 
 import argcomplete
@@ -29,11 +29,14 @@ def main():
 
         run = 0
 
+    # Initialize the API
+    exchange_classes = get_classes(api, api.ExchangeAPI)
+
     parser = argparse.ArgumentParser(description='bot based on a strategy')
-    parser.add_argument('exchange', choices=['bitfinex'], help='exchange to be used')
-    parser.add_argument('pair', choices=['btcusd', 'ltcusd', 'ethusd'], help='asset pair')
+    parser.add_argument('exchange', choices=exchange_classes.keys(), help='exchange to be used')
+    parser.add_argument('pair', choices=api.ExchangeAPI.PAIRS, help='asset pair')
     parser.add_argument('capital', type=float, help='available initial capital')
-    parser.add_argument('period', help='candle period')
+    parser.add_argument('period', choices=api.ExchangeAPI.PERIODS, help='candle period')
     parser.add_argument('refresh', type=int, help='time between updates')
 
     # Configure the strategies' subparsers
@@ -53,9 +56,6 @@ def main():
     run = 1
     signal.signal(signal.SIGINT, signal_handler)
 
-    # Initialize the API
-    exchange_classes = get_classes(api, api.ExchangeAPI)
-
     if args.exchange not in exchange_classes.keys():
         raise ValueError('invalid exchange')
 
@@ -63,7 +63,7 @@ def main():
 
     # Initialize the strategy API
     strategy_api = strategy.StrategyAPI(
-        chosen_exchange, args.pair, args.period, args.capital, comission=0.001)
+        chosen_exchange, args.pair, args.period, args.capital)
 
     # Initialize the strategy
     chosen_strategy = strategy_classes[args.strategy](strategy_api, **vars(args))

@@ -25,7 +25,6 @@ class BitfinexAPI(ExchangeAPI):
         ExchangeAPI.BTC: 'btc',
         ExchangeAPI.ETH: 'eth',
         ExchangeAPI.LTC: 'ltc',
-        ExchangeAPI.EUR: 'eur',
         ExchangeAPI.USD: 'usd',
     }
 
@@ -33,7 +32,6 @@ class BitfinexAPI(ExchangeAPI):
         'btc': ExchangeAPI.BTC,
         'eth': ExchangeAPI.ETH,
         'ltc': ExchangeAPI.LTC,
-        'eur': ExchangeAPI.EUR,
         'usd': ExchangeAPI.USD,
     }
 

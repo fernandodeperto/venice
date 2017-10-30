@@ -9,20 +9,22 @@ class ExchangeAPI:
     STOP = 'stop'
     STOP_AND_LIMIT = 'stop_and_limit'
 
+    ORDER_TYPES = [MARKET, LIMIT, STOP, STOP_AND_LIMIT]
+
     # Currencies
     BTC = 'btc'
     ETH = 'eth'
     LTC = 'ltc'
-    EUR = 'eur'
     USD = 'usd'
 
+    CURRENCIES = [BTC, ETH, LTC, USD]
+
     # Pairs
-    BTCEUR = 'btceur'
     BTCUSD = 'btcusd'
-    ETUEUR = 'etheur'
     ETHUSD = 'ethusd'
-    LTCEUR = 'ltceur'
     LTCUSD = 'ltcusd'
+
+    PAIRS = [BTCUSD, ETHUSD, LTCUSD]
 
     # Candle period
     P5 = '5'
@@ -32,14 +34,20 @@ class ExchangeAPI:
     P3H = '3h'
     P4H = '4h'
 
+    PERIODS = [P5, P15, P30, P1H, P3H, P4H]
+
     # Order direction
     BUY = 'buy'
     SELL = 'sell'
+
+    DIRECTIONS = [BUY, SELL]
 
     # Order status
     OPEN = 'open'
     CLOSED = 'closed'
     CANCELED = 'cancelled'
+
+    ORDER_STATUSES = [OPEN, CLOSED, CANCELED]
 
     def __init__(self):
         pass

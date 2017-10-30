@@ -1,7 +1,6 @@
 from .api import ExchangeAPI, ExchangeAPIException
 
 from . import bitfinex
-from . import bitfinex
 
 from .ohlc import OHLC
 from .order import Order
