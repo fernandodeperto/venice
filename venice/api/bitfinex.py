@@ -90,7 +90,8 @@ class BitfinexAPI(ExchangeAPI):
         result = self._candles(
             self.PERIOD_KEYS[period], self._convert_pair(self.PAIR_KEYS[pair]), 'hist',
             limit=limit)
-        return [self._format_ohlc(x) for x in result]
+        ohlc = [self._format_ohlc(x) for x in result]
+        return ohlc[::-1]
 
     def ticker(self, pair):
         result = self._ticker(pair)
