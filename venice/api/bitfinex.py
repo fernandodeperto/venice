@@ -5,6 +5,7 @@ from .ohlc import OHLC
 from .order import Order
 from .ticker import Ticker
 from .balance import Balance
+from .pair import Pair
 
 
 class BitfinexAPI(ExchangeAPI):
@@ -91,6 +92,12 @@ class BitfinexAPI(ExchangeAPI):
         ohlc = [self._format_ohlc(x) for x in result]
         return ohlc[::-1]
 
+    def pairs(self):
+        result = self._pairs()
+        return {x['pair']: Pair(
+            x['pair'], x['price_precision'], x['minimum_order_size'], x['maximum_order_size'])
+            for x in result}
+
     def ticker(self, pair):
         result = self._ticker(pair)
         return self._format_ticker(result)
@@ -150,6 +157,24 @@ class BitfinexAPI(ExchangeAPI):
         return self._format_order(result)
 
     # v1 endpoints - public
+
+    def _pairs(self):
+        """Return pair's details.
+
+        Response details
+        ================
+
+        pair    [string]    The pair code
+        price_precision [integer]   Maximum number of significant digits for price in this pair
+        initial_margin  [decimal]   Initial margin required to open a position in this pair
+        minimum_margin  [decimal]   Minimal margin to maintain (in %)
+        maximum_order_size  [decimal]   Maximum order size of the pair
+        minimum_order_size  [decimal]   Minimum order size of the pair
+        expiration  [string]    Expiration date for limited contracts/pairs
+        """
+
+        with BitfinexConnection() as c:
+            return c.query_public('symbols_details')
 
     def _ticker(self, pair):
         """Return ticker.
