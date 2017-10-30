@@ -201,6 +201,7 @@ class StrategyAPI:
         open_orders = {}
 
         for name in self.open_orders:
+            # Try to update a pending order. If it doesn't work, put it back in the list.
             try:
                 order_status = self.api.order_status(self.open_orders[name].id_)
 
