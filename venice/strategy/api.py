@@ -1,4 +1,7 @@
+from decimal import setcontext, BasicContext, getcontext
 from logging import getLogger
+
+from venice.util import decimal_places
 
 
 class StrategyAPIError(Exception):
@@ -20,6 +23,12 @@ class StrategyAPI:
         # Sell order needs to match a closed buy order
         self.buy_orders = {}
 
+        self._precision = self.api.pairs[self._pair].precision
+        self._decimal_places = decimal_places(self._precision)
+
+        setcontext(BasicContext)
+        getcontext().prec = 28
+
     # Basic info
 
     def close(self, limit=10):
@@ -27,6 +36,10 @@ class StrategyAPI:
 
     def currencies(self):
         return self.api.currencies(self.pair)
+
+    @property
+    def DECIMAL_PLACES(self):
+        return self._decimal_places
 
     def high(self, limit=10):
         return [x.high for x in self.ohlc(limit=limit)]
@@ -65,6 +78,11 @@ class StrategyAPI:
     def period(self):
         """Candle period in minutes."""
         return self._period
+
+    @property
+    def precision(self):
+        """Price precision for the current pair."""
+        return self._precision
 
     def ticker(self, limit=10):
         """Current ticker."""

@@ -1,10 +1,13 @@
-import statistics
 import sys
+
+from decimal import Decimal
+
+from venice.util import decimal_div
 
 
 def sma(source, length):
-    return [statistics.mean(source[x - length + 1:x + 1]) if x >= length else
-            statistics.mean(source[0:x + 1]) for x in range(0, len(source))]
+    return [sum(source[x - length + 1:x + 1]) / length if x >= length else
+            sum(source[0:x + 1]) / length for x in range(0, len(source))]
 
 
 def mom(source, length):
@@ -13,20 +16,21 @@ def mom(source, length):
 
 
 def rsi(source, length):
-    change = [0] + [source[x] - source[x - 1] for x in range(1, len(source))]
+    change = [Decimal(0)] + [source[x] - source[x - 1] for x in range(1, len(source))]
 
-    gain = [abs(x) if x > sys.float_info.epsilon else 0 for x in change]
-    loss = [abs(x) if x < -sys.float_info.epsilon else 0 for x in change]
+    gain = [abs(x) if x > sys.float_info.epsilon else Decimal(0) for x in change]
+    loss = [abs(x) if x < -sys.float_info.epsilon else Decimal(0) for x in change]
 
-    avg_gain = [0] * length + [statistics.mean(gain[1:length + 1])]
-    avg_loss = [0] * length + [statistics.mean(loss[1:length + 1])]
+    avg_gain = [Decimal(0)] * length + [sum(gain[1:length + 1]) / length]
+    avg_loss = [Decimal(0)] * length + [sum(loss[1:length + 1]) / length]
 
     for i in range(length + 1, len(source)):
         avg_gain.append((avg_gain[i - 1] * (length - 1) + gain[i]) / length)
         avg_loss.append((avg_loss[i - 1] * (length - 1) + loss[i]) / length)
 
-    rel_strength = [avg_gain[x]/avg_loss[x] if avg_loss[x] > sys.float_info.epsilon else 0 for x in
-                    range(0, len(avg_gain))]
+    rel_strength = [
+        avg_gain[x]/avg_loss[x] if avg_loss[x] > sys.float_info.epsilon
+        else Decimal(0) for x in range(0, len(avg_gain))]
 
     return [100 - (100/(1 + rel_strength[x])) for x in range(0, len(rel_strength))]
 

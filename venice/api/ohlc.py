@@ -1,12 +1,15 @@
+from decimal import Decimal
+
+
 class OHLC:
     def __init__(self, time, open_, high, low, close, volume, vwap=0, count=0):
         self.time = int(time)
-        self.open_ = float(open_)
-        self.high = float(high)
-        self.low = float(low)
-        self.close = float(close)
-        self.vwap = float(vwap)
-        self.volume = float(volume)
+        self.open_ = Decimal(open_)
+        self.high = Decimal(high)
+        self.low = Decimal(low)
+        self.close = Decimal(close)
+        self.vwap = Decimal(vwap)
+        self.volume = Decimal(volume)
         self.count = int(count)
 
     def __str__(self):
