@@ -447,9 +447,9 @@ class BitfinexAPI(ExchangeAPI):
             Decimal(result['ask']),
             Decimal(result['bid']),
             Decimal(result['last_price']),
-            Decimal(low=result['low']),
-            Decimal(high=result['high']),
-            Decimal(volume=result['volume']))
+            low=Decimal(result['low']),
+            high=Decimal(result['high']),
+            volume=Decimal(result['volume']))
 
     @staticmethod
     def _format_ohlc(result):

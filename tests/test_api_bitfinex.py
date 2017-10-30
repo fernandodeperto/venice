@@ -78,6 +78,6 @@ class TestBitfinexAPI(unittest.TestCase):
     def test_pairs(self):
         logger = logging.getLogger(__name__)
 
-        result = self.api.pairs()
+        result = self.api.pairs
         logger.debug(result)
         self.assertIsNotNone(result)
