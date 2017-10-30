@@ -71,7 +71,11 @@ def main():
     while run:
         start_time = time.time()
 
-        new_strategy = chosen_strategy.run()
+        try:
+            new_strategy = chosen_strategy.run()
+
+        except:
+            pass
 
         if new_strategy:
             chosen_strategy = new_strategy
