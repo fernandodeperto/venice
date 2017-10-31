@@ -91,6 +91,9 @@ def main():
 
         strategy_api.update()
 
+    # Ask current strategy to sell closed buy orders
+    strategy_api.clean_up()
+
 
 def configure_parsers(parsers, classes):
     for class_name, class_value in classes.items():
