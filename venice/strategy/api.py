@@ -80,7 +80,7 @@ class StrategyAPI:
         """Price precision for the current pair."""
         return self._precision
 
-    def ticker(self, limit=10):
+    def ticker(self):
         """Current ticker."""
         return self.api.ticker(self.pair)
 
@@ -247,16 +247,16 @@ class StrategyAPI:
 
         self.open_orders = open_orders
 
-        def clean_up(self):
-            while self.buy_orders:
-                for name in self.buy_orders:
-                    order_status = self.api.order_sell(name)
+    def clean_up(self):
+        while self.buy_orders:
+            for name in self.buy_orders:
+                order_status = self.api.order_sell(name)
 
-                    if order_status.status == self.api.CANCELLED:
-                        raise StrategyAPIError
+                if order_status.status == self.api.CANCELLED:
+                    raise StrategyAPIError
 
-                    elif order_status.status == self.api.CLOSED:
-                        del self.buy_orders[name]
+                elif order_status.status == self.api.CLOSED:
+                    del self.buy_orders[name]
 
-                    else:
-                        self.buy_orders[name] = order_status
+                else:
+                    self.buy_orders[name] = order_status

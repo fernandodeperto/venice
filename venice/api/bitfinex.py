@@ -418,10 +418,10 @@ class BitfinexAPI(ExchangeAPI):
             BitfinexAPI.TYPE_KEYS_REVERSE[result['type']],
             BitfinexAPI.PAIR_KEYS_REVERSE[result['symbol']],
             status,
-            Decimal(result['original_amount']),
-            price=Decimal(result['price']),
-            avg_price=Decimal(result['avg_execution_price']),
-            remaining=Decimal(result['remaining_amount']))
+            Decimal.from_float(result['original_amount']),
+            price=Decimal.from_float(result['price']),
+            avg_price=Decimal.from_float(result['avg_execution_price']),
+            remaining=Decimal.from_float(result['remaining_amount']))
 
     @staticmethod
     def _format_oco_order(result):
@@ -430,14 +430,14 @@ class BitfinexAPI(ExchangeAPI):
             result['side'],
             ExchangeAPI.STOP,
             BitfinexAPI.PAIR_KEYS_REVERSE[result['symbol']],
-            Decimal(result['original_amount']))
+            Decimal.from_float(result['original_amount']))
 
     @staticmethod
     def _format_balance(result):
         return Balance(
             BitfinexAPI.CURRENCY_KEYS_REVERSE[result['currency']],
-            Decimal(result['amount']),
-            Decimal(result['available']),
+            Decimal.from_float(result['amount']),
+            Decimal.from_float(result['available']),
             result['type'])
 
     @staticmethod
@@ -455,11 +455,11 @@ class BitfinexAPI(ExchangeAPI):
     def _format_ohlc(result):
         return OHLC(
             result[0],
-            Decimal(result[1]),
-            Decimal(result[3]),
-            Decimal(result[4]),
-            Decimal(result[2]),
-            Decimal(result[5]),
+            Decimal.from_float(result[1]),
+            Decimal.from_float(result[3]),
+            Decimal.from_float(result[4]),
+            Decimal.from_float(result[2]),
+            Decimal.from_float(result[5]),
         )
 
     @staticmethod

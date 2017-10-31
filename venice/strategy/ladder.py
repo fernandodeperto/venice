@@ -1,11 +1,25 @@
 import logging
 
+from decimal import Decimal
+
 from .strategy import Strategy
 
 
 class LadderStrategy(Strategy):
-    def __init__(self, api, *args, **kwargs):
+    def __init__(self, api, stop, *args, **kwargs):
         super().__init__(api, *args, **kwargs)
+
+        logger = logging.getLogger(__name__)
+
+        self.stop = Decimal.from_float(stop)
+
+        ohlc = self.api.ohlc(limit=1)
+        self.pivot = ohlc[-1].close
+
+        self.buy = True
+
+        logger.info('ladder strategy init with stop={} and pivot={}'.format(
+            self.stop, self.pivot))
 
     @staticmethod
     def descr_text():
@@ -17,10 +31,29 @@ class LadderStrategy(Strategy):
 
     @staticmethod
     def configure_parser(parser):
-        pass
+        parser.add_argument('stop', type=float, help='Trailing stop value for orders')
 
     def run(self):
-        return None
+        logger = logging.getLogger(__name__)
+
+        ticker = self.api.ticker()
+
+        if self.buy:
+            self.pivot = min(self.pivot, ticker.last)
+
+            if ticker.last > self.pivot + self.stop:
+                logger.info('buy order')
+                self.buy = False
+
+        else:
+            self.pivot = max(self.pivot, ticker.last)
+
+            if ticker.last < self.pivot - self.stop:
+                logger.info('sell order')
+                self.buy = True
+
+        logger.info('ladder strategy: last={:.5f}, pivot={:.5f}, stop={:.5f}, buy={}'.format(
+            ticker.last, self.pivot, self.stop, self.buy))
 
     def clean_up(self):
         pass

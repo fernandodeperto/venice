@@ -86,10 +86,14 @@ def main():
 
         except Exception as e:
             logger.warning(e)
+            raise
 
         time.sleep(max(args.refresh - (time.time() - start_time), MIN_SLEEP))
 
         strategy_api.update()
+
+    # Clean up strategy if necessary
+    chosen_strategy.clean_up()
 
     # Ask current strategy to sell closed buy orders
     strategy_api.clean_up()
