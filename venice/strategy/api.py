@@ -80,7 +80,7 @@ class StrategyAPI:
         """Price precision for the current pair."""
         return self._precision
 
-    def ticker(self, limit=10):
+    def ticker(self):
         """Current ticker."""
         return self.api.ticker(self.pair)
 
@@ -169,6 +169,7 @@ class StrategyAPI:
         if direction == self.api.SELL and name not in self.buy_orders:
             raise StrategyAPIError
 
+        # Limit and stop orders are not supported yet
         if limit and stop:
             raise StrategyAPIError
 
@@ -193,13 +194,14 @@ class StrategyAPI:
         if len(order_statuses) > 1:
             raise StrategyAPIError
 
-        self.open_orders[name] = order_statuses[0]
-
         logger.info('new {} order {}: {}'.format(direction, name, self.open_orders[name]))
+
+        self.open_orders[name] = order_statuses[0]
+        return self.open_orders[name]
 
     def order_buy(self, name, volume=0, limit=0, stop=0):
         """Command to place a buy order."""
-        self.order(name, 'buy', volume=volume, limit=limit, stop=stop)
+        return self.order(name, 'buy', volume=volume, limit=limit, stop=stop)
 
     def order_sell(self, name, limit=0, stop=0):
         """Command to place a sell order."""
@@ -207,7 +209,8 @@ class StrategyAPI:
             raise StrategyAPIError
 
         volume = self.buy_orders[name].volume
-        self.order(name, 'sell', volume=volume, limit=limit, stop=stop)
+
+        return self.order(name, 'sell', volume=volume, limit=limit, stop=stop)
 
     def update(self):
         logger = getLogger(__name__)
@@ -243,3 +246,17 @@ class StrategyAPI:
                     order_status.direction, name, order_status.status, order_status))
 
         self.open_orders = open_orders
+
+    def clean_up(self):
+        while self.buy_orders:
+            for name in self.buy_orders:
+                order_status = self.api.order_sell(name)
+
+                if order_status.status == self.api.CANCELLED:
+                    raise StrategyAPIError
+
+                elif order_status.status == self.api.CLOSED:
+                    del self.buy_orders[name]
+
+                else:
+                    self.buy_orders[name] = order_status

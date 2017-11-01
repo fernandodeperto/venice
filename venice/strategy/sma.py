@@ -1,9 +1,7 @@
 import logging
 
-from decimal import getcontext
-
 from .strategy import Strategy
-from .indicator import crossover, crossunder, sma, mom, rsi
+from .indicator import crossover, crossunder, sma
 
 
 class SMAStrategy(Strategy):
@@ -12,8 +10,6 @@ class SMAStrategy(Strategy):
 
         self.fast_sma = fast_sma
         self.slow_sma = slow_sma
-
-        self.step = 0
 
     @staticmethod
     def descr_text():
@@ -49,3 +45,6 @@ class SMAStrategy(Strategy):
         elif crossunder(sma_fast, sma_slow):
             # self.api.order_sell('SMA')
             logger.info('sell order')
+
+    def clean_up(self):
+        pass

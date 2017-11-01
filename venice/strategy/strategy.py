@@ -21,5 +21,9 @@ class Strategy(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def run():
+    def run(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def clean_up(self):
         raise NotImplementedError
