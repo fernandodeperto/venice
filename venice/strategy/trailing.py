@@ -16,7 +16,7 @@ class TrailingStrategy(Strategy):
         ohlc = self.api.ohlc(limit=1)
         self.pivot = ohlc[-1].close
 
-        self.buy = True
+        self.buy = None
 
         logger.info('trailing stop started with stop={} and pivot={}'.format(
             self.stop, self.pivot))
@@ -38,19 +38,20 @@ class TrailingStrategy(Strategy):
 
         ticker = self.api.ticker()
 
-        if self.buy:
+        if not self.buy:
             self.pivot = min(self.pivot, ticker.last)
 
             if ticker.last > self.pivot + self.stop:
-                logger.info('buy order')
-                self.buy = False
+                logger.info('buy order @ {}'.format(ticker.last))
+                self.buy = ticker.last
 
         else:
             self.pivot = max(self.pivot, ticker.last)
 
             if ticker.last < self.pivot - self.stop:
-                logger.info('sell order')
-                self.buy = True
+                logger.info('sell order @ {}, p/l {}'.format(
+                    ticker.last, ticker.last/self.buy - 1))
+                self.buy = None
 
         logger.info('last={:.5f}, pivot={:.5f}, stop={:.5f}, buy={}'.format(
             ticker.last, self.pivot, self.stop, self.buy))

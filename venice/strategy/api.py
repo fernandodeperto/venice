@@ -144,7 +144,7 @@ class StrategyAPI:
         logger = getLogger(__name__)
 
         if name not in self.open_orders:
-            raise StrategyAPIError
+            raise StrategyAPIError('pending order {} not found'.format(name))
 
         self.api.cancel_order(self.open_orders[name].id_)
 
@@ -164,14 +164,14 @@ class StrategyAPI:
             self.cancel(name)
 
         if direction == self.api.BUY and name in self.buy_orders:
-            raise StrategyAPIError
+            raise StrategyAPIError('buy order {} already exists'.format(name))
 
         if direction == self.api.SELL and name not in self.buy_orders:
-            raise StrategyAPIError
+            raise StrategyAPIError('buy order {} not found'.format(name))
 
         # Limit and stop orders are not supported yet
         if limit and stop:
-            raise StrategyAPIError
+            raise StrategyAPIError('stop and limit orders not supported')
 
         if limit:
             price = limit
@@ -192,7 +192,7 @@ class StrategyAPI:
             self.pair, direction, order_type, volume=volume, price=price, price2=price2)
 
         if len(order_statuses) > 1:
-            raise StrategyAPIError
+            raise StrategyAPIError('orders with multiple order statuses not supported')
 
         logger.info('new {} order {}: {}'.format(direction, name, self.open_orders[name]))
 
@@ -206,7 +206,7 @@ class StrategyAPI:
     def order_sell(self, name, limit=0, stop=0):
         """Command to place a sell order."""
         if name not in self.buy_orders:
-            raise StrategyAPIError
+            raise StrategyAPIError('buy order {} not found'.format(name))
 
         volume = self.buy_orders[name].volume
 
@@ -232,13 +232,13 @@ class StrategyAPI:
                 elif order_status.status == self.api.CLOSED:
                     if order_status.direction == self.api.BUY:
                         if name in self.buy_orders:
-                            raise StrategyAPIError
+                            raise StrategyAPIError('buy order {} already exists'.format(name))
 
                         self.buy_orders[name] = order_status
 
                     else:  # Sell order
                         if name not in self.buy_orders:
-                            raise StrategyAPIError
+                            raise StrategyAPIError('buy order {} not found'.format(name))
 
                         del self.buy_orders[name]
 
@@ -253,7 +253,7 @@ class StrategyAPI:
                 order_status = self.api.order_sell(name)
 
                 if order_status.status == self.api.CANCELLED:
-                    raise StrategyAPIError
+                    raise StrategyAPIError('order {} cancelled unexpectedly'.format(name))
 
                 elif order_status.status == self.api.CLOSED:
                     del self.buy_orders[name]
