@@ -5,7 +5,7 @@ from decimal import Decimal
 from .strategy import Strategy
 
 
-class LadderStrategy(Strategy):
+class TrailingStrategy(Strategy):
     def __init__(self, api, stop, *args, **kwargs):
         super().__init__(api, *args, **kwargs)
 
@@ -18,16 +18,16 @@ class LadderStrategy(Strategy):
 
         self.buy = True
 
-        logger.info('ladder strategy init with stop={} and pivot={}'.format(
+        logger.info('trailing stop started with stop={} and pivot={}'.format(
             self.stop, self.pivot))
 
     @staticmethod
     def descr_text():
-        return 'Ladder strategy'
+        return 'Trailing stop strategy'
 
     @staticmethod
     def help_text():
-        return 'Ladder strategy'
+        return 'Trailing stop strategy'
 
     @staticmethod
     def configure_parser(parser):
@@ -52,7 +52,7 @@ class LadderStrategy(Strategy):
                 logger.info('sell order')
                 self.buy = True
 
-        logger.info('ladder strategy: last={:.5f}, pivot={:.5f}, stop={:.5f}, buy={}'.format(
+        logger.info('last={:.5f}, pivot={:.5f}, stop={:.5f}, buy={}'.format(
             ticker.last, self.pivot, self.stop, self.buy))
 
     def clean_up(self):
