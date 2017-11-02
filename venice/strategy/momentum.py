@@ -32,7 +32,10 @@ class MomentumStrategy(Strategy):
 
         ticker = self.api.ticker()
         ohlc = self.api.ohlc(limit=self.length)
+
         close = [x.close for x in ohlc]
+        high = [x.high for x in ohlc]
+        low = [x.low for x in ohlc]
 
         mom0 = mom(close, self.length)
         mom1 = mom(mom0, 1)
@@ -40,11 +43,11 @@ class MomentumStrategy(Strategy):
         logger.info('mom0={:.5f}, mom1={:.5f}'.format(mom0[-1], mom1[-1]))
 
         if mom0[-1] > EPSILON and mom1[-1] > EPSILON:
-            self.buy = ohlc.high[-1]
+            self.buy = high[-1]
             logger.info('stop buy @ {:.5f}'.format(self.buy))
 
         elif self.current and mom0[-1] < -EPSILON and mom1[-1] < -EPSILON:
-            self.sell = ohlc.low[-1]
+            self.sell = low[-1]
             logger.info('stop sell @ {:.5f}'.format(self.sell))
 
         elif self.buy or self.sell:
