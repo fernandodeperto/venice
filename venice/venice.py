@@ -79,8 +79,8 @@ def main():
             if new_strategy:
                 chosen_strategy = new_strategy
 
-        except connection.ExchangeConnectionException:
-            logger.exception()
+        except connection.ExchangeConnectionException as e:
+            logger.exception(e)
 
         time.sleep(max(args.refresh - (time.time() - start_time), MIN_SLEEP))
 
