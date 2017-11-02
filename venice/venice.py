@@ -1,11 +1,8 @@
 import argparse
-import collections
-# import importlib
 import inspect
 import logging
 import logging.config
 import signal
-import sys
 import time
 
 from decimal import getcontext, setcontext, BasicContext, FloatOperation
@@ -13,11 +10,8 @@ from decimal import getcontext, setcontext, BasicContext, FloatOperation
 import argcomplete
 
 from . import api
+from . import connection
 from . import strategy
-
-StrategyModule = collections.namedtuple(
-    'StrategyModule',
-    'module_name class_name value')
 
 MIN_SLEEP = 5
 
@@ -84,8 +78,11 @@ def main():
             if new_strategy:
                 chosen_strategy = new_strategy
 
-        except Exception as e:
+        except connection.ExchangeConnectionTimeoutError as e:
             logger.warning(e)
+
+        except Exception as e:
+            logger.error(e)
             raise
 
         time.sleep(max(args.refresh - (time.time() - start_time), MIN_SLEEP))
