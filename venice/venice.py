@@ -4,6 +4,7 @@ import logging
 import logging.config
 import signal
 import time
+import sys
 
 from decimal import getcontext, setcontext, BasicContext, FloatOperation
 
@@ -78,12 +79,8 @@ def main():
             if new_strategy:
                 chosen_strategy = new_strategy
 
-        except connection.ExchangeConnectionTimeoutError as e:
-            logger.warning(e)
-
-        except Exception as e:
-            logger.error(e)
-            raise
+        except connection.ExchangeConnectionException:
+            logger.exception()
 
         time.sleep(max(args.refresh - (time.time() - start_time), MIN_SLEEP))
 

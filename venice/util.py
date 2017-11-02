@@ -1,4 +1,8 @@
+import sys
+
 from decimal import Decimal
+
+EPSILON = Decimal.from_float(sys.float_info.epsilon)
 
 
 def decimal_places(precision):

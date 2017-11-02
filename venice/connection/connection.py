@@ -7,22 +7,14 @@ import time
 from requests.exceptions import ReadTimeout
 
 
-class ExchangeConnectionTimeoutError(Exception):
-    pass
-
-
-class ExchangeConnectionResponseError(Exception):
-    pass
-
-
-class ExchangeConnectionJSONError(Exception):
+class ExchangeConnectionException(Exception):
     pass
 
 
 class ExchangeConnection(metaclass=abc.ABCMeta):
     """
     Base class for Exchange connection."""
-    def __init__(self, uri, version=None, key=None, secret=None, timeout=5):
+    def __init__(self, uri, version=None, key=None, secret=None, timeout=4):
         """Create ExchangeConnection object."""
         self.uri = uri
         self.version = version
@@ -67,19 +59,19 @@ class ExchangeConnection(metaclass=abc.ABCMeta):
         try:
             response = requests.request(method, self.uri + path, timeout=self.timeout, **kwargs)
         except ReadTimeout:
-            raise ExchangeConnectionTimeoutError
+            raise ExchangeConnectionException('timeout')
 
         logger.debug(
             'new request: method={}, path={}, kwargs={}, ok={}, status_code={}, text={}'.format(
                 method, path, kwargs, response.ok, response.status_code, response.text))
 
         if not response.ok:
-            raise ExchangeConnectionResponseError(response.text)
+            raise ExchangeConnectionException(response.text)
 
         try:
             return json.loads(response.text)
         except ValueError:
-            raise ExchangeConnectionJSONError(response.text)
+            raise ExchangeConnectionException(response.text)
 
     @staticmethod
     def _format_get_params(params):

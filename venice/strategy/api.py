@@ -22,7 +22,13 @@ class StrategyAPI:
         # Sell order needs to match a closed buy order
         self.buy_orders = {}
 
-        self._precision = self.api.pairs[self._pair].precision
+        # Get price precision from exchange API
+        try:
+            self._precision = self.api.pairs[self._pair].precision
+
+        except:
+            raise StrategyAPIError
+
         self._decimal_places = decimal_places(self._precision)
 
     # Basic info
