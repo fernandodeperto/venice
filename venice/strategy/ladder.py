@@ -50,10 +50,12 @@ class LadderStrategy(Strategy):
 
             self.steps -= 1
 
-        if self.orders and ticker.last >= self.orders[-1][1]:
+        elif self.orders and ticker.last >= self.orders[-1][1] + self.stop:
             step, price = self.orders.pop()
 
             logger.info('sell order {} @ {}'.format(step, ticker.last))
+
+            self.steps += 1
 
         logger.info('last={:.5f}, pivot={:.5f}, steps={}, orders={}'.format(
             ticker.last, self.pivot, self.steps, self.orders))
