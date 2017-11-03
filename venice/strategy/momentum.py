@@ -43,13 +43,14 @@ class MomentumStrategy(Strategy):
         logger.info('mom0={:.5f}, mom1={:.5f}'.format(mom0[-1], mom1[-1]))
 
         if mom0[-1] > EPSILON and mom1[-1] > EPSILON:
-            if not self.buy:
+            if not self.current and not self.buy:
                 self.buy = high[-1]
                 logger.info('stop buy @ {:.5f}'.format(self.buy))
 
-        elif self.current and mom0[-1] < -EPSILON and mom1[-1] < -EPSILON:
-            self.sell = low[-1]
-            logger.info('stop sell @ {:.5f}'.format(self.sell))
+        elif mom0[-1] < -EPSILON and mom1[-1] < -EPSILON:
+            if self.current:
+                self.sell = low[-1]
+                logger.info('stop sell @ {:.5f}'.format(self.sell))
 
         elif self.buy or self.sell:
             self.buy = None
@@ -63,8 +64,8 @@ class MomentumStrategy(Strategy):
 
         elif self.sell and ticker.last - self.sell < -EPSILON:
             self.sell = None
-            logger.info('close buy order @ {:.5f} with sell order @ {:.5f}'.format(
-                self.current, ticker.last))
+            logger.info('close sell order @ {:.5f} with buy order @ {:.5f}'.format(
+                ticker.last, self.current))
 
             self.current = None
 
