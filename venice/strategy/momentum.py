@@ -49,7 +49,7 @@ class MomentumStrategy(Strategy):
                 logger.info('stop buy @ {:.5f}'.format(self.buy))
 
         elif mom0[-1] < -EPSILON and mom1[-1] < -EPSILON:
-            if self.current:
+            if self.current and not self.sell:
                 self.sell = low[-1]
                 logger.info('stop sell @ {:.5f}'.format(self.sell))
 
