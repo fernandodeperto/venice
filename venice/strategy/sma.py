@@ -1,4 +1,4 @@
-import logging
+from logging import getLogger
 
 from .strategy import Strategy
 from .indicator import crossover, crossunder, sma
@@ -25,7 +25,7 @@ class SMAStrategy(Strategy):
         parser.add_argument('slow_sma', type=int, help='Slow SMA period')
 
     def run(self):
-        logger = logging.getLogger(__name__)
+        logger = getLogger(__name__)
 
         # ticker = self.api.ticker()
         # volume = self.api.capital/ticker.last

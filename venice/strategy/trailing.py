@@ -1,6 +1,5 @@
-import logging
-
 from decimal import Decimal
+from logging import getLogger
 
 from .strategy import Strategy
 
@@ -9,7 +8,7 @@ class TrailingStrategy(Strategy):
     def __init__(self, api, stop, *args, **kwargs):
         super().__init__(api, *args, **kwargs)
 
-        logger = logging.getLogger(__name__)
+        logger = getLogger(__name__)
 
         self.stop = Decimal.from_float(stop)
 
@@ -34,7 +33,7 @@ class TrailingStrategy(Strategy):
         parser.add_argument('stop', type=float, help='Trailing stop value for orders')
 
     def run(self):
-        logger = logging.getLogger(__name__)
+        logger = getLogger(__name__)
 
         ticker = self.api.ticker()
 

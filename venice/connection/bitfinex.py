@@ -2,8 +2,8 @@ import base64
 import hashlib
 import hmac
 import json
-import logging
 
+from logging import getLogger
 from os.path import expanduser
 
 from .connection import ExchangeConnection
@@ -45,7 +45,7 @@ class BitfinexConnection(ExchangeConnection):
         return self.query('POST', endpoint, sign=True, **kwargs)
 
     def _sign(self, path, params=None):
-        logger = logging.getLogger(__name__)
+        logger = getLogger(__name__)
 
         if not params:
             params = {}

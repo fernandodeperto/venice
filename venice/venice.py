@@ -1,11 +1,11 @@
 import argparse
 import inspect
-import logging
-import logging.config
 import signal
 import time
 
 from decimal import getcontext, setcontext, BasicContext, FloatOperation
+from logging import getLogger
+from logging.config import fileConfig
 
 import argcomplete
 
@@ -20,7 +20,7 @@ def main():
     def signal_handler(sig, frame):
         nonlocal run
 
-        logger = logging.getLogger(__name__)
+        logger = getLogger(__name__)
         logger.debug("signal {} received".format(sig))
 
         run = 0
@@ -45,8 +45,8 @@ def main():
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
-    logging.config.fileConfig('logging.conf')
-    logger = logging.getLogger(__name__)
+    fileConfig('logging.conf')
+    logger = getLogger(__name__)
 
     # Decimal module initialization
     setcontext(BasicContext)
@@ -78,8 +78,8 @@ def main():
             if new_strategy:
                 chosen_strategy = new_strategy
 
-        except connection.ExchangeConnectionException as e:
-            logger.exception(e)
+        except connection.ExchangeConnectionException:
+            logger.warning('timeout')
 
         time.sleep(max(args.refresh - (time.time() - start_time), MIN_SLEEP))
 

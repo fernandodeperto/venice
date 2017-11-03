@@ -1,4 +1,4 @@
-import logging
+from logging import getLogger
 
 from .indicator import mom
 from .strategy import Strategy
@@ -28,7 +28,7 @@ class MomentumStrategy(Strategy):
         parser.add_argument('length', type=int, help='Momentum length')
 
     def run(self):
-        logger = logging.getLogger(__name__)
+        logger = getLogger(__name__)
 
         ticker = self.api.ticker()
         ohlc = self.api.ohlc(limit=self.length)

@@ -1,9 +1,9 @@
 import abc
 import json
-import logging
 import requests
 import time
 
+from logging import getLogger
 from requests.exceptions import ReadTimeout
 
 
@@ -54,7 +54,7 @@ class ExchangeConnection(metaclass=abc.ABCMeta):
 
     def _request(self, method, path, **kwargs):
         """Send the resquest to the exchange."""
-        logger = logging.getLogger(__name__)
+        logger = getLogger(__name__)
 
         try:
             response = requests.request(method, self.uri + path, timeout=self.timeout, **kwargs)
