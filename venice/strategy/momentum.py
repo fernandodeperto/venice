@@ -40,7 +40,8 @@ class MomentumStrategy(Strategy):
         mom0 = mom(close, self.length)
         mom1 = mom(mom0, 1)
 
-        logger.info('mom0={:.5f}, mom1={:.5f}'.format(mom0[-1], mom1[-1]))
+        logger.info('last={:.5f}, mom0={:.5f}, mom1={:.5f}'.format(
+            ticker.last, mom0[-1], mom1[-1]))
 
         if mom0[-1] > EPSILON and mom1[-1] > EPSILON:
             if not self.current and not self.buy:
