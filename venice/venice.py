@@ -4,7 +4,6 @@ import logging
 import logging.config
 import signal
 import time
-import sys
 
 from decimal import getcontext, setcontext, BasicContext, FloatOperation
 
