@@ -1,8 +1,11 @@
 from decimal import Decimal
 from logging import getLogger
+from collections import namedtuple
 
 # from venice.util import EPSILON
 from .strategy import Strategy
+
+LadderOrder = namedtuple('Order', 'name, price, step')
 
 
 class LadderStrategy(Strategy):
@@ -32,6 +35,8 @@ class LadderStrategy(Strategy):
 
     @staticmethod
     def configure_parser(parser):
+        # TODO Add option to buy some steps at the beginning
+
         parser.add_argument('steps', type=int, help='Number of order steps')
         parser.add_argument('stop', type=float, help='Trailing stop value for orders')
 
@@ -39,23 +44,25 @@ class LadderStrategy(Strategy):
         logger = getLogger(__name__)
 
         ticker = self.api.ticker()
-
         self.pivot = max(self.pivot, ticker.last)
 
-        if self.steps and self.pivot - ticker.last > self.stop:
+        order_name = 'Ladder' + str(self.steps)
+
+        if self.steps and ticker.last <= self.pivot - self.stop:
+            self.api.order_buy(order_name, volume=self.step_volume)
+            self.api.order_sell(order_name, volume=self.step_volume, limit=ticker.last + self.stop)
+
+            self.orders.append(LadderOrder(order_name, ticker.last, self.steps))
+
             self.pivot = ticker.last
-            self.orders.append((self.steps, ticker.last))
-
-            logger.info('buy order {} @ {}'.format(self.steps, ticker.last))
-
             self.steps -= 1
 
-        elif self.orders and ticker.last >= self.orders[-1][1] + self.stop:
-            step, price = self.orders.pop()
+        # elif self.orders and ticker.last >= self.orders[-1].price + self.stop:
+        #     order = self.oprders.pop()
 
-            logger.info('sell order {} @ {}'.format(step, ticker.last))
+        #     logger.info('sell order {} @ {}'.format(step, ticker.last))
 
-            self.steps += 1
+        #     self.steps += 1
 
         logger.info('last={:.5f}, pivot={:.5f}, steps={}, orders={}'.format(
             ticker.last, self.pivot, self.steps, self.orders))

@@ -1,6 +1,6 @@
 from logging import getLogger
 
-from venice.util import decimal_places
+from ..util import decimal_places
 
 
 class StrategyAPIError(Exception):
@@ -30,6 +30,11 @@ class StrategyAPI:
             raise StrategyAPIError
 
         self._decimal_places = decimal_places(self._precision)
+
+        # Use the same order statuses as the current API's
+        self.CANCELED = self.api.CANCELED
+        self.CLOSED = self.api.CLOSED
+        self.OPEN = self.api.OPEN
 
     # Basic info
 
@@ -218,6 +223,13 @@ class StrategyAPI:
 
         return self.order(name, 'sell', volume=volume, limit=limit, stop=stop)
 
+    def order_status(self, name):
+        if name in self.open_orders:
+            return self.OPEN
+
+        if name in self.buy_orders:
+            return self.CLOSED
+
     def update(self):
         logger = getLogger(__name__)
 
@@ -230,26 +242,29 @@ class StrategyAPI:
 
             except:
                 open_orders[name] = self.open_orders[name]
+                return
 
-            else:
-                if order_status.status == self.api.OPEN:
-                    open_orders[name] = order_status
+            if order_status.status == self.api.OPEN:
+                open_orders[name] = order_status
 
-                elif order_status.status == self.api.CLOSED:
-                    if order_status.direction == self.api.BUY:
-                        if name in self.buy_orders:
-                            raise StrategyAPIError('buy order {} already exists'.format(name))
+            elif order_status.status == self.api.CLOSED:
+                if order_status.direction == self.api.BUY:
+                    if name in self.buy_orders:
+                        raise StrategyAPIError('buy order {} already exists'.format(name))
 
-                        self.buy_orders[name] = order_status
+                    self.buy_orders[name] = order_status
 
-                    else:  # Sell order
-                        if name not in self.buy_orders:
-                            raise StrategyAPIError('buy order {} not found'.format(name))
+                else:  # Sell order
+                    if name not in self.buy_orders:
+                        raise StrategyAPIError('buy order {} not found'.format(name))
 
-                        del self.buy_orders[name]
+                    del self.buy_orders[name]
 
-                logger.info('{} order {} {}: {}'.format(
-                    order_status.direction, name, order_status.status, order_status))
+            elif order_status.status == self.api.CANCELED:
+                raise StrategyAPIError('order {} canceled unexpectedly'.format(name))
+
+            logger.info('{} order {} {}: {}'.format(
+                order_status.direction, name, order_status.status, order_status))
 
         self.open_orders = open_orders
 
@@ -258,7 +273,7 @@ class StrategyAPI:
             for name in self.buy_orders:
                 order_status = self.api.order_sell(name)
 
-                if order_status.status == self.api.CANCELLED:
+                if order_status.status == self.api.CANCELED:
                     raise StrategyAPIError('order {} cancelled unexpectedly'.format(name))
 
                 elif order_status.status == self.api.CLOSED:
