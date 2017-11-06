@@ -45,18 +45,21 @@ class LadderStrategy(Strategy):
         ticker = self.api.ticker()
         self.pivot = max(self.pivot, ticker.last)
 
-        # TODO Check if any of the orders in the list were closed
+        while self.orders and ticker.last >= self.orders[-1].price + self.stop:
+            logger.info('closed sell order @ {}: {}'.format(ticker.last, self.orders.pop()))
 
         if len(self.orders) < self.steps and ticker.last <= self.pivot - self.stop:
             order_name = 'Ladder' + str(len(self.orders))
-            volume = self.api.capital / self.steps / ticker.last
+            # volume = self.api.capital / self.steps / ticker.last
 
-            self.api.order_buy(order_name, volume=volume)
-            self.api.order_sell(order_name, limit=ticker.last + self.stop)
+            # self.api.order_buy(order_name, volume=volume)
+            # self.api.order_sell(order_name, limit=ticker.last + self.stop)
 
             self.orders.append(LadderOrder(order_name, ticker.last, self.steps))
 
             self.pivot = ticker.last
+
+            logger.info('closed buy order @ {}: {}'.format(ticker.last, self.orders[-1]))
 
         logger.info('last={:.5f}, pivot={:.5f}, orders={}'.format(
             ticker.last, self.pivot, self.orders))
