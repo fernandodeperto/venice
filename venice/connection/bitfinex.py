@@ -11,8 +11,7 @@ from .connection import ExchangeConnection
 
 class BitfinexConnection(ExchangeConnection):
     """Bitfinex connection class."""
-    def __init__(self, uri='https://api.bitfinex.com/', version='v1', key=None, secret=None,
-                 timeout=8):
+    def __init__(self, uri='https://api.bitfinex.com/', version='v1', key=None, secret=None):
         super().__init__(uri, version, key, secret)
 
         self.headers = {

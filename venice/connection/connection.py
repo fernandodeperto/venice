@@ -14,13 +14,12 @@ class ExchangeConnectionException(Exception):
 class ExchangeConnection(metaclass=abc.ABCMeta):
     """
     Base class for Exchange connection."""
-    def __init__(self, uri, version=None, key=None, secret=None, timeout=4):
+    def __init__(self, uri, version=None, key=None, secret=None):
         """Create ExchangeConnection object."""
         self.uri = uri
         self.version = version
         self.key = key
         self.secret = secret
-        self.timeout = timeout
 
     def __enter__(self):
         return self
@@ -57,7 +56,8 @@ class ExchangeConnection(metaclass=abc.ABCMeta):
         logger = getLogger(__name__)
 
         try:
-            response = requests.request(method, self.uri + path, timeout=self.timeout, **kwargs)
+            response = requests.request(method, self.uri + path, **kwargs)
+
         except ReadTimeout:
             raise ExchangeConnectionException('timeout')
 
@@ -70,6 +70,7 @@ class ExchangeConnection(metaclass=abc.ABCMeta):
 
         try:
             return json.loads(response.text)
+
         except ValueError:
             raise ExchangeConnectionException(response.text)
 

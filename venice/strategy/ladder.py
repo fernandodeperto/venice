@@ -55,28 +55,29 @@ class LadderStrategy(Strategy):
 
             self.pending_order = None
 
-        while self.orders and ticker.last >= self.orders[-1].price + self.stop:
+        orders = []
+        for order in self.orders:
             # Check if order was confirmed. If not, break loop
             try:
-                order_status = self.api.order_status(self.orders[-1].name)
+                order_status = self.api.order_status(order.name)
+
+                if order_status.status == self.api.CLOSED:
+                    logger.info('sell order {} closed @ {}'.format(self.orders[-1], ticker.last))
+
+                else:
+                    orders.append(order)
 
             except Exception:
-                logger.warning('could not confirm order {}'.format(self.orders[-1]))
-                raise
+                logger.warning('could not confirm order {}'.format(order))
+                orders.append(order)
 
-            if order_status.status == self.api.CLOSED:
-                logger.info('sell order {} closed @ {}'.format(self.orders[-1], ticker.last))
-                order = self.orders.pop()
+        if (not self.pending_order and len(self.orders) < self.steps and
+                ticker.last <= self.pivot - self.stop):
 
-            else:
-                logger.warning('sell order {} not closed'.format(self.orders[-1]))
-                break
-
-            logger.info('closed sell order @ {}: {}'.format(ticker.last, order))
-
-        if len(self.orders) < self.steps and ticker.last <= self.pivot - self.stop:
             order_name = 'Ladder' + str(len(self.orders))
             volume = self.api.capital / self.steps / ticker.last
+
+            self.pivot = ticker.last
 
             # Place market buy order. If unsuccessful, return
             try:
@@ -88,20 +89,10 @@ class LadderStrategy(Strategy):
 
             order = LadderOrder(order_name, ticker.last, self.steps)
 
-            # Place limit sell order. If unsuccessful, save it in the list
-            try:
-                self.api.order_sell(order_name, limit=ticker.last + self.stop)
+            # Wait until next iteration to add the limit sell order
+            self.pending_order = order
 
-            except:
-                self.pending_order = order
-
-                logger.warning('could not place limit order {}'.format(order))
-                raise
-
-            self.orders.append(order)
-            self.pivot = ticker.last
-
-            logger.info('closed buy order {} @ {}'.format(order, ticker.last))
+            logger.info('placed buy order {} @ {}'.format(order, ticker.last))
 
         logger.info('last={:.5f}, pivot={:.5f}, orders={}'.format(
             ticker.last, self.pivot, self.orders))
