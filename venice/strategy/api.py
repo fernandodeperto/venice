@@ -206,9 +206,10 @@ class StrategyAPI:
         if len(order_statuses) > 1:
             raise StrategyAPIError('orders with multiple order statuses not supported')
 
+        self.open_orders[name] = order_statuses[0]
+
         logger.info('new {} order {}: {}'.format(direction, name, self.open_orders[name]))
 
-        self.open_orders[name] = order_statuses[0]
         return self.open_orders[name]
 
     def order_buy(self, name, volume=0, limit=0, stop=0):
