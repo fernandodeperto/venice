@@ -49,9 +49,9 @@ class LadderStrategy(Strategy):
                 self.api.order_sell(self.pending_order.name,
                                     limit=self.pending_order.price + self.stop)
 
-            except:
+            except Exception:
                 logger.warning('could not place pending buy order {}'.format(self.pending_order))
-                return
+                raise
 
             self.pending_order = None
 
@@ -60,9 +60,9 @@ class LadderStrategy(Strategy):
             try:
                 order_status = self.api.order_status(self.orders[-1].name)
 
-            except:
+            except Exception:
                 logger.warning('could not confirm order {}'.format(self.orders[-1]))
-                return
+                raise
 
             if order_status.status == self.api.CLOSED:
                 logger.info('sell order {} closed @ {}'.format(self.orders[-1], ticker.last))
@@ -82,9 +82,9 @@ class LadderStrategy(Strategy):
             try:
                 self.api.order_buy(order_name, volume=volume)
 
-            except:
+            except Exception:
                 logger.warning('could not place market order')
-                return
+                raise
 
             order = LadderOrder(order_name, ticker.last, self.steps)
 
@@ -96,7 +96,7 @@ class LadderStrategy(Strategy):
                 self.pending_order = order
 
                 logger.warning('could not place limit order {}'.format(order))
-                return
+                raise
 
             self.orders.append(order)
             self.pivot = ticker.last

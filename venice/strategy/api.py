@@ -1,3 +1,4 @@
+from decimal import Decimal
 from logging import getLogger
 
 from ..util import decimal_places
@@ -13,8 +14,8 @@ class StrategyAPI:
 
         self._pair = pair
         self._period = period
-        self._capital = capital
-        self._comission = comission
+        self._capital = Decimal.from_float(capital)
+        self._comission = Decimal.from_float(comission)
 
         # Only one open order with each order name
         self.open_orders = {}
