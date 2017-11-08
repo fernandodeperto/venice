@@ -9,6 +9,10 @@ class StrategyAPIError(Exception):
 
 
 class StrategyAPI:
+    PENDING = 'pending'
+    OPEN = 'open'
+    CLOSED = 'closed'
+
     def __init__(self, api, pair, period, capital, comission=0):
         self.api = api
 
@@ -31,11 +35,6 @@ class StrategyAPI:
             raise StrategyAPIError
 
         self._decimal_places = decimal_places(self._precision)
-
-        # Use the same order statuses as the current API's
-        self.CANCELED = self.api.CANCELED
-        self.CLOSED = self.api.CLOSED
-        self.OPEN = self.api.OPEN
 
     # Basic info
 
@@ -172,14 +171,14 @@ class StrategyAPI:
     def order(self, name, direction, volume=0, limit=0, stop=0):
         logger = getLogger(__name__)
 
-        if name in self.open_orders:
-            self.cancel(name)
-
         if direction == self.api.BUY and name in self.buy_orders:
             raise StrategyAPIError('buy order {} already exists'.format(name))
 
         if direction == self.api.SELL and name not in self.buy_orders:
             raise StrategyAPIError('buy order {} not found'.format(name))
+
+        if name in self.open_orders:
+            self.cancel(name)
 
         # Limit and stop orders are not supported yet
         if limit and stop:
@@ -227,10 +226,12 @@ class StrategyAPI:
 
     def order_status(self, name):
         if name in self.open_orders:
-            return self.OPEN
+            return self.PENDING
 
         if name in self.buy_orders:
-            return self.CLOSED
+            return self.OPEN
+
+        return self.CLOSED
 
     def update(self):
         logger = getLogger(__name__)
@@ -271,15 +272,5 @@ class StrategyAPI:
         self.open_orders = open_orders
 
     def clean_up(self):
-        while self.buy_orders:
-            for name in self.buy_orders:
-                order_status = self.api.order_sell(name)
-
-                if order_status.status == self.api.CANCELED:
-                    raise StrategyAPIError('order {} cancelled unexpectedly'.format(name))
-
-                elif order_status.status == self.api.CLOSED:
-                    del self.buy_orders[name]
-
-                else:
-                    self.buy_orders[name] = order_status
+        for name in self.buy_orders:
+            self.order_sell(name)

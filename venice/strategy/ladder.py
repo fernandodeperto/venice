@@ -53,24 +53,13 @@ class LadderStrategy(Strategy):
                 logger.warning('could not place pending buy order {}'.format(self.pending_order))
                 raise
 
+            self.orders.append(self.pending_order)
             self.pending_order = None
 
-        orders = []
-        for order in self.orders:
-            # Check if order was confirmed. If not, break loop
-            try:
-                order_status = self.api.order_status(order.name)
+        # Filter pending sell orders
+        self.orders = [x for x in self.orders if self.api.order_status(x.name) == self.api.PENDING]
 
-                if order_status.status == self.api.CLOSED:
-                    logger.info('sell order {} closed @ {}'.format(self.orders[-1], ticker.last))
-
-                else:
-                    orders.append(order)
-
-            except Exception:
-                logger.warning('could not confirm order {}'.format(order))
-                orders.append(order)
-
+        # Place new buy orders
         if (not self.pending_order and len(self.orders) < self.steps and
                 ticker.last <= self.pivot - self.stop):
 
@@ -87,15 +76,11 @@ class LadderStrategy(Strategy):
                 logger.warning('could not place market order')
                 raise
 
-            order = LadderOrder(order_name, ticker.last, self.steps)
+            self.pending_order = LadderOrder(order_name, ticker.last, self.steps)
+            logger.info('placed buy order {} @ {}'.format(self.pending_order, ticker.last))
 
-            # Wait until next iteration to add the limit sell order
-            self.pending_order = order
-
-            logger.info('placed buy order {} @ {}'.format(order, ticker.last))
-
-        logger.info('last={:.5f}, pivot={:.5f}, orders={}'.format(
-            ticker.last, self.pivot, self.orders))
+        logger.info('last={:.5f}, pivot={:.5f}, orders={}, pending={}'.format(
+            ticker.last, self.pivot, self.orders, self.pending_order))
 
     def clean_up(self):
         pass
