@@ -78,18 +78,30 @@ def main():
             if new_strategy:
                 chosen_strategy = new_strategy
 
-        except connection.ExchangeConnectionException:
-            logger.warning('timeout')
+        except Exception as e:
+            logger.exception(e)
 
         time.sleep(max(args.refresh - (time.time() - start_time), MIN_SLEEP))
 
-        strategy_api.update()
+        try:
+            strategy_api.update()
+
+        except Exception as e:
+            logger.exception(e)
 
     # Clean up strategy if necessary
-    chosen_strategy.clean_up()
+    try:
+        chosen_strategy.clean_up()
+
+    except Exception as e:
+        logger.exception(e)
 
     # Ask current strategy to sell closed buy orders
-    strategy_api.clean_up()
+    try:
+        strategy_api.clean_up()
+
+    except Exception:
+        logger.exception(e)
 
 
 def configure_parsers(parsers, classes):
