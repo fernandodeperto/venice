@@ -1,3 +1,5 @@
+import re
+
 from decimal import Decimal
 from logging import getLogger
 from collections import namedtuple
@@ -21,6 +23,7 @@ class LadderStrategy(Strategy):
         self.steps = steps
         self.stop = Decimal.from_float(stop)
         self.correction = Decimal.from_float(0.5)
+        self.order_num = 0
 
         logger.info('ladder strategy started with {} steps, stop={:.5f}'.format(
             self.steps, self.stop))
@@ -59,7 +62,7 @@ class LadderStrategy(Strategy):
         self.orders = [x for x in self.orders if self.api.order_status(x.name) == self.api.PENDING]
 
         if not self.pending_order and len(self.orders) < self.steps:
-            order_name = 'Ladder' + str(len(self.orders))
+            order_name = 'Ladder' + str(self.order_num)
             price = ticker.last - self.stop
             volume = self.api.capital / self.steps / price
 
@@ -71,6 +74,7 @@ class LadderStrategy(Strategy):
                 raise
 
             self.pending_order = LadderOrder(order_name, price, len(self.orders))
+            self.order_num += 1
 
             logger.info('placed limit buy order {}'.format(self.pending_order))
 
@@ -86,7 +90,8 @@ class LadderStrategy(Strategy):
                 logger.warning('could not place new buy order')
                 raise
 
-            self.pending_order.price = price
+            self.pending_order = LadderOrder(
+                self.pending_order.name, price, self.pending_order.step)
 
             logger.info('placed new limit buy order {}'.format(self.pending_order))
 
