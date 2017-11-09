@@ -15,13 +15,12 @@ class LadderStrategy(Strategy):
         logger = getLogger(__name__)
 
         self.orders = []
-        self.current_order = None
         self.pending_order = None
 
         self.pivot = -1
         self.steps = steps
         self.stop = Decimal.from_float(stop)
-        self.correction = 0.5
+        self.correction = Decimal.from_float(0.5)
 
         logger.info('ladder strategy started with {} steps, stop={:.5f}'.format(
             self.steps, self.stop))
@@ -71,17 +70,17 @@ class LadderStrategy(Strategy):
                 logger.warning('could not place limit buy order')
                 raise
 
-            self.current_order = LadderOrder(order_name, price, len(self.steps))
+            self.pending_order = LadderOrder(order_name, price, len(self.orders))
 
-            logger.info('placed limit buy order {}'.format(self.current_order))
+            logger.info('placed limit buy order {}'.format(self.pending_order))
 
-        elif (self.pending_order and ticker.last > self.current_order.price +
+        elif (self.pending_order and ticker.last > self.pending_order.price +
               (1 + self.correction) * self.stop):
-            volume = self.api.capital / self.steps / price
             price = ticker.last - self.stop
+            volume = self.api.capital / self.steps / price
 
             try:
-                self.api.order_buy(self.current_order.name, volume=volume, limit=price)
+                self.api.order_buy(self.pending_order.name, volume=volume, limit=price)
 
             except Exception:
                 logger.warning('could not place new buy order')
@@ -89,7 +88,7 @@ class LadderStrategy(Strategy):
 
             self.pending_order.price = price
 
-            logger.info('placed new limit buy order {}'.format(self.current_order))
+            logger.info('placed new limit buy order {}'.format(self.pending_order))
 
         logger.info('last={:.5f}, pending={}, orders={}'.format(
             ticker.last, self.pending_order, self.orders))
