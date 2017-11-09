@@ -165,7 +165,7 @@ class StrategyAPI:
 
     def cancel_all(self):
         """Command to cancel all pending orders."""
-        for name in self.open_orders:
+        for name in list(self.open_orders.keys()):
             self.cancel(name)
 
     def order(self, name, direction, volume=0, limit=0, stop=0):
@@ -266,11 +266,14 @@ class StrategyAPI:
             elif order_status.status == self.api.CANCELED:
                 raise StrategyAPIError('order {} canceled unexpectedly'.format(name))
 
-            logger.info('{} order {} {}: {}'.format(
+            logger.debug('{} order {} {}: {}'.format(
                 order_status.direction, name, order_status.status, order_status))
 
         self.open_orders = open_orders
 
     def clean_up(self):
-        for name in self.buy_orders:
+        for name in list(self.open_orders.keys()):
+            self.cancel(name)
+
+        for name in list(self.buy_orders.keys()):
             self.order_sell(name)
