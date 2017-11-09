@@ -15,10 +15,13 @@ class LadderStrategy(Strategy):
         logger = getLogger(__name__)
 
         self.orders = []
+        self.current_order = None
         self.pending_order = None
+
         self.pivot = -1
         self.steps = steps
         self.stop = Decimal.from_float(stop)
+        self.correction = 0.5
 
         logger.info('ladder strategy started with {} steps, stop={:.5f}'.format(
             self.steps, self.stop))
@@ -41,46 +44,55 @@ class LadderStrategy(Strategy):
         logger = getLogger(__name__)
 
         ticker = self.api.ticker()
-        self.pivot = max(self.pivot, ticker.last)
 
-        # Place pending sell order
-        if self.pending_order:
+        if self.pending_order and self.api.order_status(self.pending_order.name) == self.api.OPEN:
             try:
                 self.api.order_sell(self.pending_order.name,
                                     limit=self.pending_order.price + self.stop)
 
             except Exception:
-                logger.warning('could not place pending buy order {}'.format(self.pending_order))
+                logger.warning('could not limit sell order {}'.format(self.pending_order))
                 raise
 
             self.orders.append(self.pending_order)
             self.pending_order = None
 
-        # Filter pending sell orders
         self.orders = [x for x in self.orders if self.api.order_status(x.name) == self.api.PENDING]
 
-        # Place new buy orders
-        if (not self.pending_order and len(self.orders) < self.steps and
-                ticker.last <= self.pivot - self.stop):
-
+        if not self.pending_order and len(self.orders) < self.steps:
             order_name = 'Ladder' + str(len(self.orders))
-            volume = self.api.capital / self.steps / ticker.last
+            price = ticker.last - self.stop
+            volume = self.api.capital / self.steps / price
 
-            self.pivot = ticker.last
-
-            # Place market buy order. If unsuccessful, return
             try:
-                self.api.order_buy(order_name, volume=volume)
+                self.api.order_buy(order_name, volume=volume, limit=price)
 
             except Exception:
-                logger.warning('could not place market order')
+                logger.warning('could not place limit buy order')
                 raise
 
-            self.pending_order = LadderOrder(order_name, ticker.last, self.steps)
-            logger.info('placed buy order {} @ {}'.format(self.pending_order, ticker.last))
+            self.current_order = LadderOrder(order_name, price, len(self.steps))
 
-        logger.info('last={:.5f}, pivot={:.5f}, orders={}, pending={}'.format(
-            ticker.last, self.pivot, self.orders, self.pending_order))
+            logger.info('placed limit buy order {}'.format(self.current_order))
+
+        elif (self.pending_order and ticker.last > self.current_order.price +
+              (1 + self.correction) * self.stop):
+            volume = self.api.capital / self.steps / price
+            price = ticker.last - self.stop
+
+            try:
+                self.api.order_buy(self.current_order.name, volume=volume, limit=price)
+
+            except Exception:
+                logger.warning('could not place new buy order')
+                raise
+
+            self.pending_order.price = price
+
+            logger.info('placed new limit buy order {}'.format(self.current_order))
+
+        logger.info('last={:.5f}, pending={}, orders={}'.format(
+            ticker.last, self.pending_order, self.orders))
 
     def clean_up(self):
         pass
