@@ -272,5 +272,8 @@ class StrategyAPI:
         self.open_orders = open_orders
 
     def clean_up(self):
+        for name in self.open_orders:
+            self.cancel(name)
+
         for name in self.buy_orders:
             self.order_sell(name)
