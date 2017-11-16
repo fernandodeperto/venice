@@ -7,6 +7,7 @@ class ExchangeAPI:
     MARKET = 'market'
     LIMIT = 'limit'
     STOP = 'stop'
+    TRAILING_STOP = 'trailing stop'
     STOP_AND_LIMIT = 'stop_and_limit'
 
     ORDER_TYPES = [MARKET, LIMIT, STOP, STOP_AND_LIMIT]
