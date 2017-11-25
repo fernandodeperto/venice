@@ -11,7 +11,9 @@ class TrailingStrategy(Strategy):
         super().__init__(api, *args, **kwargs)
 
         self.stop = Decimal.from_float(stop)
-        self.buy_order = None
+
+        self.current = None
+        self.pending = None
 
         logger.info('trailing stop started with stop={}'.format(self.stop))
 
@@ -32,18 +34,23 @@ class TrailingStrategy(Strategy):
 
         ticker = self.api.ticker()
 
-        if not self.buy_order:
-            self.order = self.api.order_buy('Trailing0', self.api.TRAILING_STOP, price=self.stop)
-
-        else:
-            order_status = self.api.order_status('Trailing0')
+        if self.pending:
+            order_status = self.api.order_status('Trailing')
 
             if order_status == self.api.OPEN:
-                self.order = self.api.order_sell('Trailing0', self.api.TRAILING_STOP,
-                                                 price=self.stop)
+                self.current = self.pending
+                self.pending = None
 
             elif order_status == self.api.CLOSED:
-                self.order = None
+                self.current = None
+                self.pending = None
+
+        if not self.current and not self.pending:
+            self.pending = self.api.order_buy('Trailing', self.api.TRAILING_STOP, price=self.stop)
+
+        elif self.current and not self.pending:
+            self.pending = self.api.order_sell('Trailing0', self.api.TRAILING_STOP,
+                                               price=self.stop)
 
         logger.info('last={:.5f}, order={}'.format(ticker.last, self.order))
 

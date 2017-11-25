@@ -27,8 +27,6 @@ class SMAStrategy(Strategy):
     def run(self):
         logger = getLogger(__name__)
 
-        # ticker = self.api.ticker()
-        # volume = self.api.capital/ticker.last
         close = [x.close for x in self.api.ohlc(limit=80)]
         sma_fast = sma(close, self.fast_sma)
         sma_slow = sma(close, self.slow_sma)
@@ -39,12 +37,10 @@ class SMAStrategy(Strategy):
                 crossover(sma_fast, sma_slow), crossunder(sma_fast, sma_slow)))
 
         if crossover(sma_fast, sma_slow):
-            # self.api.order_buy('SMA', volume=volume)
-            logger.info('buy order')
+            self.api.order_buy('SMA', self.api.MARKET)
 
         elif crossunder(sma_fast, sma_slow):
-            # self.api.order_sell('SMA')
-            logger.info('sell order')
+            self.api.order_sell('SMA', self.api.MARKET)
 
     def clean_up(self):
         pass

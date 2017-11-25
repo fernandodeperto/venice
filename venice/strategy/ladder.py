@@ -49,11 +49,11 @@ class LadderStrategy(Strategy):
 
         if self.pending_order and self.api.order_status(self.pending_order.name) == self.api.OPEN:
             try:
-                self.api.order_sell(self.pending_order.name,
-                                    limit=self.pending_order.price + self.stop)
+                self.api.order_sell(self.pending_order.name, self.api.LIMIT,
+                                    price=self.pending_order.price + self.stop)
 
             except Exception:
-                logger.warning('could not limit sell order {}'.format(self.pending_order))
+                logger.warning('could not place limit sell order {}'.format(self.pending_order))
                 raise
 
             self.orders.append(self.pending_order)
@@ -67,7 +67,7 @@ class LadderStrategy(Strategy):
             volume = self.api.capital / self.steps / price
 
             try:
-                self.api.order_buy(order_name, volume=volume, limit=price)
+                self.api.order_buy(order_name, self.api.LIMIT, volume=volume, price=price)
 
             except Exception:
                 logger.warning('could not place limit buy order')
@@ -84,7 +84,8 @@ class LadderStrategy(Strategy):
             volume = self.api.capital / self.steps / price
 
             try:
-                self.api.order_buy(self.pending_order.name, volume=volume, limit=price)
+                self.api.order_buy(self.pending_order.name, self.api.LIMIT, volume=volume,
+                                   price=price)
 
             except Exception:
                 logger.warning('could not place new buy order')

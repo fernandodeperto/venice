@@ -12,8 +12,7 @@ class MomentumStrategy(Strategy):
         self.length = length
 
         self.current = None
-        self.buy = None
-        self.sell = None
+        self.pending = None
 
     @staticmethod
     def descr_text():
@@ -43,32 +42,34 @@ class MomentumStrategy(Strategy):
         logger.info('last={:.5f}, mom0={:.5f}, mom1={:.5f}'.format(
             ticker.last, mom0[-1], mom1[-1]))
 
-        if mom0[-1] > EPSILON and mom1[-1] > EPSILON:
-            if not self.current and not self.buy:
-                self.buy = high[-1]
-                logger.info('stop buy @ {:.5f}'.format(self.buy))
+        if self.pending:
+            order_status = self.api.order_status('Momentum')
 
-        elif mom0[-1] < -EPSILON and mom1[-1] < -EPSILON:
-            if self.current and not self.sell:
-                self.sell = low[-1]
-                logger.info('stop sell @ {:.5f}'.format(self.sell))
+            if order_status == self.api.OPEN:
+                self.current = self.pending
+                self.pending = None
 
-        elif self.buy or self.sell:
-            self.buy = None
-            self.sell = None
-            logger.info('cancel')
+            elif order_status == self.api.CLOSED:
+                self.current = None
+                self.pending = None
 
-        if self.buy and ticker.last - self.buy > EPSILON:
-            self.buy = None
-            self.current = ticker.last
-            logger.info('close buy order @ {:.5f}'.format(self.current))
+        if mom0[-1] > EPSILON and mom1[-1] > EPSILON and not self.current:
+            if self.pending:
+                self.api.cancel('Momentum')
 
-        elif self.sell and ticker.last - self.sell < -EPSILON:
-            self.sell = None
-            logger.info('close sell order @ {:.5f} with buy order @ {:.5f}'.format(
-                ticker.last, self.current))
+            self.pending = self.api.order_buy('Momentum', self.api.STOP, price=high[-1])
+            logger.info('stop buy @ {:.5f}'.format(self.pending))
 
-            self.current = None
+        elif mom0[-1] < -EPSILON and mom1[-1] < -EPSILON and self.current:
+            if self.pending:
+                self.api.cancel('Momentum')
+
+            self.pending = self.api.order_sell('Momentum', self.api.STOP, price=low[-1])
+            logger.info('stop sell @ {:.5f}'.format(self.pending))
+
+        elif self.pending:
+            self.api.cancel('Momentum')
+            self.pending = None
 
     def clean_up(self):
         pass
