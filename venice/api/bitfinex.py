@@ -16,6 +16,7 @@ class BitfinexAPI(ExchangeAPI):
         ExchangeAPI.MARKET: 'exchange market',
         ExchangeAPI.LIMIT: 'exchange limit',
         ExchangeAPI.STOP: 'exchange stop',
+        ExchangeAPI.TRAILING_STOP: 'exchange trailing-stop',
         ExchangeAPI.STOP_AND_LIMIT: 'exchange limit',
     }
 
@@ -23,6 +24,7 @@ class BitfinexAPI(ExchangeAPI):
         'exchange market': ExchangeAPI.MARKET,
         'exchange limit': ExchangeAPI.LIMIT,
         'exchange stop': ExchangeAPI.STOP,
+        'exchange trailing stop': ExchangeAPI.TRAILING_STOP,
     }
 
     CURRENCY_KEYS = {

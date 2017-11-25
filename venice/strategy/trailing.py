@@ -6,19 +6,16 @@ from .strategy import Strategy
 
 class TrailingStrategy(Strategy):
     def __init__(self, api, stop, *args, **kwargs):
-        super().__init__(api, *args, **kwargs)
-
         logger = getLogger(__name__)
+
+        super().__init__(api, *args, **kwargs)
 
         self.stop = Decimal.from_float(stop)
 
-        ohlc = self.api.ohlc(limit=1)
-        self.pivot = ohlc[-1].close
+        self.current = None
+        self.pending = None
 
-        self.buy = None
-
-        logger.info('trailing stop started with stop={} and pivot={}'.format(
-            self.stop, self.pivot))
+        logger.info('trailing stop started with stop={}'.format(self.stop))
 
     @staticmethod
     def descr_text():
@@ -37,23 +34,25 @@ class TrailingStrategy(Strategy):
 
         ticker = self.api.ticker()
 
-        if not self.buy:
-            self.pivot = min(self.pivot, ticker.last)
+        if self.pending:
+            order_status = self.api.order_status('Trailing')
 
-            if ticker.last > self.pivot + self.stop:
-                logger.info('buy order @ {}'.format(ticker.last))
-                self.buy = ticker.last
+            if order_status == self.api.OPEN:
+                self.current = self.pending
+                self.pending = None
 
-        else:
-            self.pivot = max(self.pivot, ticker.last)
+            elif order_status == self.api.CLOSED:
+                self.current = None
+                self.pending = None
 
-            if ticker.last < self.pivot - self.stop:
-                logger.info('sell order @ {}, p/l {}'.format(
-                    ticker.last, ticker.last/self.buy - 1))
-                self.buy = None
+        if not self.current and not self.pending:
+            self.pending = self.api.order_buy('Trailing', self.api.TRAILING_STOP, price=self.stop)
 
-        logger.info('last={:.5f}, pivot={:.5f}, stop={:.5f}, buy={}'.format(
-            ticker.last, self.pivot, self.stop, self.buy))
+        elif self.current and not self.pending:
+            self.pending = self.api.order_sell('Trailing0', self.api.TRAILING_STOP,
+                                               price=self.stop)
+
+        logger.info('last={:.5f}, order={}'.format(ticker.last, self.order))
 
     def clean_up(self):
         pass

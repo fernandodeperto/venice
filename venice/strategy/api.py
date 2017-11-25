@@ -2,6 +2,7 @@ from decimal import Decimal
 from logging import getLogger
 
 from ..util import decimal_places
+from ..api.api import ExchangeAPI
 
 
 class StrategyAPIError(Exception):
@@ -12,6 +13,15 @@ class StrategyAPI:
     PENDING = 'pending'
     OPEN = 'open'
     CLOSED = 'closed'
+
+    MARKET = ExchangeAPI.MARKET
+    LIMIT = ExchangeAPI.LIMIT
+    STOP = ExchangeAPI.STOP
+    TRAILING_STOP = ExchangeAPI.TRAILING_STOP
+    # STOP_AND_LIMIT = ExchangeAPI.STOP_AND_LIMIT
+
+    BUY = ExchangeAPI.BUY
+    SELL = ExchangeAPI.SELL
 
     def __init__(self, api, pair, period, capital, comission=0):
         self.api = api
@@ -98,7 +108,9 @@ class StrategyAPI:
     # Comission and balance
 
     def balance(self):
-        return self.api.balance(self.pair)
+        used_volume = sum([x.volume for x in self.buy_orders])
+        ticker = self.ticker()
+        return self.capital - used_volume * ticker.last
 
     @property
     def comission(self):
@@ -168,61 +180,25 @@ class StrategyAPI:
         for name in list(self.open_orders.keys()):
             self.cancel(name)
 
-    def order(self, name, direction, volume=0, limit=0, stop=0):
-        logger = getLogger(__name__)
-
-        if direction == self.api.BUY and name in self.buy_orders:
+    def order_buy(self, name, type_, volume=0, price=0, price2=0):
+        """Place a buy order."""
+        if name in self.buy_orders:
             raise StrategyAPIError('buy order {} already exists'.format(name))
 
-        if direction == self.api.SELL and name not in self.buy_orders:
-            raise StrategyAPIError('buy order {} not found'.format(name))
+        if not volume:
+            ticker = self.ticker()
+            volume = self.balance()/ticker.last
 
-        if name in self.open_orders:
-            self.cancel(name)
+        return self._order(name, 'buy', type_, volume, price=price, price2=price2)
 
-        # Limit and stop orders are not supported yet
-        if limit and stop:
-            raise StrategyAPIError('stop and limit orders not supported')
-
-        if limit:
-            price = limit
-            price2 = 0
-            order_type = self.api.LIMIT
-
-        elif stop:
-            price = stop
-            price2 = 0
-            order_type = self.api.STOP
-
-        else:
-            price = 0
-            price2 = 0
-            order_type = self.api.MARKET
-
-        order_statuses = self.api.add_order(
-            self.pair, direction, order_type, volume=volume, price=price, price2=price2)
-
-        if len(order_statuses) > 1:
-            raise StrategyAPIError('orders with multiple order statuses not supported')
-
-        self.open_orders[name] = order_statuses[0]
-
-        logger.info('new {} order {}: {}'.format(direction, name, self.open_orders[name]))
-
-        return self.open_orders[name]
-
-    def order_buy(self, name, volume=0, limit=0, stop=0):
-        """Command to place a buy order."""
-        return self.order(name, 'buy', volume=volume, limit=limit, stop=stop)
-
-    def order_sell(self, name, limit=0, stop=0):
+    def order_sell(self, name, type_, price=0, price2=0):
         """Command to place a sell order."""
         if name not in self.buy_orders:
             raise StrategyAPIError('buy order {} not found'.format(name))
 
         volume = self.buy_orders[name].volume
 
-        return self.order(name, 'sell', volume=volume, limit=limit, stop=stop)
+        return self.order(name, 'sell', type_, volume, price=price, price2=price2)
 
     def order_status(self, name):
         if name in self.open_orders:
@@ -247,11 +223,11 @@ class StrategyAPI:
                 open_orders[name] = self.open_orders[name]
                 return
 
-            if order_status.status == self.api.OPEN:
+            if order_status.status == self.OPEN:
                 open_orders[name] = order_status
 
-            elif order_status.status == self.api.CLOSED:
-                if order_status.direction == self.api.BUY:
+            elif order_status.status == self.CLOSED:
+                if order_status.direction == self.BUY:
                     if name in self.buy_orders:
                         raise StrategyAPIError('buy order {} already exists'.format(name))
 
@@ -263,7 +239,7 @@ class StrategyAPI:
 
                     del self.buy_orders[name]
 
-            elif order_status.status == self.api.CANCELED:
+            elif order_status.status == self.CANCELED:
                 raise StrategyAPIError('order {} canceled unexpectedly'.format(name))
 
             logger.debug('{} order {} {}: {}'.format(
@@ -277,3 +253,21 @@ class StrategyAPI:
 
         for name in list(self.buy_orders.keys()):
             self.order_sell(name)
+
+    def _order(self, name, direction, type_, volume, price=0, price2=0):
+        logger = getLogger(__name__)
+
+        if name in self.open_orders:
+            self.cancel(name)
+
+        order_statuses = self.api.add_order(
+            self.pair, direction, type_, volume=volume, price=price, price2=price2)
+
+        if len(order_statuses) > 1:
+            raise StrategyAPIError('orders with multiple order statuses not supported')
+
+        self.open_orders[name] = order_statuses[0]
+
+        logger.info('new {} order {}: {}'.format(direction, name, self.open_orders[name]))
+
+        return self.open_orders[name]
