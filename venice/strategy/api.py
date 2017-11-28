@@ -10,10 +10,6 @@ class StrategyAPIError(Exception):
 
 
 class StrategyAPI:
-    PENDING = 'pending'
-    OPEN = 'open'
-    CLOSED = 'closed'
-
     MARKET = ExchangeAPI.MARKET
     LIMIT = ExchangeAPI.LIMIT
     STOP = ExchangeAPI.STOP
@@ -23,6 +19,9 @@ class StrategyAPI:
     BUY = ExchangeAPI.BUY
     SELL = ExchangeAPI.SELL
 
+    PENDING = ExchangeAPI.PENDING
+    CONFIRMED = ExchangeAPI.CONFIRMED
+
     def __init__(self, api, pair, period, capital, comission=0):
         self.api = api
 
@@ -31,8 +30,8 @@ class StrategyAPI:
         self._capital = Decimal.from_float(capital)
         self._comission = Decimal.from_float(comission)
 
-        # Only one open order with each order name
-        self.open_orders = {}
+        # Only one pending order with each order name
+        self.pending_orders = {}
 
         # Sell order needs to match a closed buy order
         self.buy_orders = {}
@@ -111,7 +110,7 @@ class StrategyAPI:
         ticker = self.ticker()
 
         used_volume = (sum([x.volume for x in self.buy_orders]) +
-                       sum([x.volume for x in self.open_orders]))
+                       sum([x.volume for x in self.pending_orders]))
         return self.capital - used_volume * ticker.last
 
     @property
@@ -172,18 +171,18 @@ class StrategyAPI:
         """Command to cancel/deactivate pending orders by referencing their names."""
         logger = getLogger(__name__)
 
-        if name not in self.open_orders:
+        if name not in self.pending_orders:
             raise StrategyAPIError('pending order {} not found'.format(name))
 
-        self.api.cancel_order(self.open_orders[name].id_)
+        self.api.cancel_order(self.pending_orders[name].id_)
 
-        logger.info('cancel order {}: {}'.format(name, self.open_orders[name]))
+        logger.info('cancel order {}: {}'.format(name, self.pending_orders[name]))
 
-        del self.open_orders[name]
+        del self.pending_orders[name]
 
     def cancel_all(self):
         """Command to cancel all pending orders."""
-        for name in list(self.open_orders.keys()):
+        for name in list(self.pending_orders.keys()):
             self.cancel(name)
 
     def order_buy(self, name, type_, volume=0, price=0, price2=0):
@@ -213,30 +212,30 @@ class StrategyAPI:
         return self.order(name, 'sell', type_, volume, price=price, price2=price2)
 
     def order_status(self, name):
-        if name in self.open_orders:
-            return self.PENDING
+        if name in self.pending_orders:
+            pass
 
         if name in self.buy_orders:
-            return self.OPEN
+            pass
 
-        return self.CLOSED
+        pass
 
     def update(self):
         logger = getLogger(__name__)
 
-        open_orders = {}
+        pending_orders = {}
 
-        for name in self.open_orders:
+        for name in self.pending_orders:
             # Try to update a pending order. If it doesn't work, put it back in the list.
             try:
-                order_status = self.api.order_status(self.open_orders[name].id_)
+                order_status = self.api.order_status(self.pending_orders[name].id_)
 
             except:
-                open_orders[name] = self.open_orders[name]
+                pending_orders[name] = self.pending_orders[name]
                 return
 
             if order_status.status == self.OPEN:
-                open_orders[name] = order_status
+                pending_orders[name] = order_status
 
             elif order_status.status == self.CLOSED:
                 if order_status.direction == self.BUY:
@@ -257,10 +256,10 @@ class StrategyAPI:
             logger.debug('{} order {} {}: {}'.format(
                 order_status.direction, name, order_status.status, order_status))
 
-        self.open_orders = open_orders
+        self.pending_orders = pending_orders
 
     def clean_up(self):
-        for name in list(self.open_orders.keys()):
+        for name in list(self.pending_orders.keys()):
             self.cancel(name)
 
         for name in list(self.buy_orders.keys()):
@@ -269,7 +268,7 @@ class StrategyAPI:
     def _order(self, name, direction, type_, volume, price=0, price2=0):
         logger = getLogger(__name__)
 
-        if name in self.open_orders:
+        if name in self.pending_orders:
             self.cancel(name)
 
         order_statuses = self.api.add_order(
@@ -278,8 +277,8 @@ class StrategyAPI:
         if len(order_statuses) > 1:
             raise StrategyAPIError('orders with multiple order statuses not supported')
 
-        self.open_orders[name] = order_statuses[0]
+        self.pending_orders[name] = order_statuses[0]
 
-        logger.info('new {} order {}: {}'.format(direction, name, self.open_orders[name]))
+        logger.info('new {} order {}: {}'.format(direction, name, self.pending_orders[name]))
 
-        return self.open_orders[name]
+        return self.pending_orders[name]

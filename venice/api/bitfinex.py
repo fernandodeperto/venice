@@ -411,7 +411,7 @@ class BitfinexAPI(ExchangeAPI):
     @staticmethod
     def _format_order(result):
         status = (
-            ExchangeAPI.OPEN if result['is_live'] else
+            ExchangeAPI.PENDING if result['is_live'] else
             ExchangeAPI.CANCELED if result['is_cancelled'] else ExchangeAPI.CLOSED)
 
         return Order(

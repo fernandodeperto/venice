@@ -44,11 +44,9 @@ class ExchangeAPI:
     DIRECTIONS = [BUY, SELL]
 
     # Order status
-    OPEN = 'open'
-    CLOSED = 'closed'
-    CANCELED = 'cancelled'
-
-    ORDER_STATUSES = [OPEN, CLOSED, CANCELED]
+    PENDING = 'pending'
+    CONFIRMED = 'confirmed'
+    CANCELED = 'canceled'
 
     def __init__(self):
         pass
