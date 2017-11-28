@@ -33,6 +33,7 @@ class BitfinexAPI(ExchangeAPI):
         ExchangeAPI.LTC: 'ltc',
         ExchangeAPI.IOT: 'iot',
         ExchangeAPI.DSH: 'dsh',
+        ExchangeAPI.BCH: 'bch',
         ExchangeAPI.USD: 'usd',
     }
 
@@ -42,6 +43,7 @@ class BitfinexAPI(ExchangeAPI):
         'ltc': ExchangeAPI.LTC,
         'iot': ExchangeAPI.IOT,
         'dsh': ExchangeAPI.DSH,
+        'bch': ExchangeAPI.BCH,
         'usd': ExchangeAPI.USD,
     }
 
@@ -51,6 +53,7 @@ class BitfinexAPI(ExchangeAPI):
         ExchangeAPI.LTCUSD: 'ltcusd',
         ExchangeAPI.IOTUSD: 'iotusd',
         ExchangeAPI.DSHUSD: 'dshusd',
+        ExchangeAPI.BCHUSD: 'bchusd',
     }
 
     PAIR_KEYS_REVERSE = {
@@ -59,6 +62,7 @@ class BitfinexAPI(ExchangeAPI):
         'ltcusd': ExchangeAPI.LTCUSD,
         'iotusd': ExchangeAPI.IOTUSD,
         'dshusd': ExchangeAPI.DSHUSD,
+        'bchusd': ExchangeAPI.BCHUSD,
     }
 
     PERIOD_KEYS = {
@@ -94,6 +98,7 @@ class BitfinexAPI(ExchangeAPI):
         ExchangeAPI.LTCUSD: ('ltc', 'usd'),
         ExchangeAPI.IOTUSD: ('iot', 'usd'),
         ExchangeAPI.DSHUSD: ('dsh', 'usd'),
+        ExchangeAPI.BCHUSD: ('bch', 'usd'),
     }
 
     def __init__(self):

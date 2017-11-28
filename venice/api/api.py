@@ -18,9 +18,10 @@ class ExchangeAPI:
     LTC = 'ltc'
     IOT = 'iot'
     DSH = 'dsh'
+    BCH = 'bch'
     USD = 'usd'
 
-    CURRENCIES = [BTC, ETH, LTC, USD]
+    CURRENCIES = [BTC, ETH, LTC, BCH, USD]
 
     # Pairs
     BTCUSD = 'btcusd'
@@ -28,8 +29,9 @@ class ExchangeAPI:
     LTCUSD = 'ltcusd'
     IOTUSD = 'iotusd'
     DSHUSD = 'dshusd'
+    BCHUSD = 'bchusd'
 
-    PAIRS = [BTCUSD, ETHUSD, LTCUSD, IOTUSD, DSHUSD]
+    PAIRS = [BTCUSD, ETHUSD, LTCUSD, IOTUSD, DSHUSD, BCHUSD]
 
     # Candle period
     P5 = '5'
