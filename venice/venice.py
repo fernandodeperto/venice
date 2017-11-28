@@ -29,6 +29,7 @@ def main():
     exchange_classes = get_classes(api, api.ExchangeAPI)
 
     parser = argparse.ArgumentParser(description='bot based on a strategy')
+    parser.add_argument('-l', '--live', action="store_true", help='enable live mode')
     parser.add_argument('exchange', choices=exchange_classes.keys(), help='exchange to be used')
     parser.add_argument('pair', choices=api.ExchangeAPI.PAIRS, help='asset pair')
     parser.add_argument('capital', type=float, help='available initial capital')
@@ -64,7 +65,7 @@ def main():
 
     # Initialize the strategy API
     strategy_api = strategy.StrategyAPI(
-        chosen_exchange, args.pair, args.period, args.capital)
+        chosen_exchange, args.pair, args.period, args.capital, live=args.live)
 
     # Initialize the strategy
     chosen_strategy = strategy_classes[args.strategy](strategy_api, **vars(args))

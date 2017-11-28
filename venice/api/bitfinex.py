@@ -31,6 +31,8 @@ class BitfinexAPI(ExchangeAPI):
         ExchangeAPI.BTC: 'btc',
         ExchangeAPI.ETH: 'eth',
         ExchangeAPI.LTC: 'ltc',
+        ExchangeAPI.IOT: 'iot',
+        ExchangeAPI.DSH: 'dsh',
         ExchangeAPI.USD: 'usd',
     }
 
@@ -38,6 +40,8 @@ class BitfinexAPI(ExchangeAPI):
         'btc': ExchangeAPI.BTC,
         'eth': ExchangeAPI.ETH,
         'ltc': ExchangeAPI.LTC,
+        'iot': ExchangeAPI.IOT,
+        'dsh': ExchangeAPI.DSH,
         'usd': ExchangeAPI.USD,
     }
 
@@ -45,12 +49,16 @@ class BitfinexAPI(ExchangeAPI):
         ExchangeAPI.BTCUSD: 'btcusd',
         ExchangeAPI.ETHUSD: 'ethusd',
         ExchangeAPI.LTCUSD: 'ltcusd',
+        ExchangeAPI.IOTUSD: 'iotusd',
+        ExchangeAPI.DSHUSD: 'dshusd',
     }
 
     PAIR_KEYS_REVERSE = {
         'btcusd': ExchangeAPI.BTCUSD,
         'ethusd': ExchangeAPI.ETHUSD,
         'ltcusd': ExchangeAPI.LTCUSD,
+        'iotusd': ExchangeAPI.IOTUSD,
+        'dshusd': ExchangeAPI.DSHUSD,
     }
 
     PERIOD_KEYS = {
@@ -79,10 +87,13 @@ class BitfinexAPI(ExchangeAPI):
         'sell': ExchangeAPI.SELL,
     }
 
+    # TODO Create a property to calculate this on the fly
     PAIR_CURRENCY_KEYS = {
         ExchangeAPI.BTCUSD: ('btc', 'usd'),
         ExchangeAPI.ETHUSD: ('eth', 'usd'),
         ExchangeAPI.LTCUSD: ('ltc', 'usd'),
+        ExchangeAPI.IOTUSD: ('iot', 'usd'),
+        ExchangeAPI.DSHUSD: ('dsh', 'usd'),
     }
 
     def __init__(self):
@@ -412,7 +423,8 @@ class BitfinexAPI(ExchangeAPI):
     def _format_order(result):
         status = (
             ExchangeAPI.PENDING if result['is_live'] else
-            ExchangeAPI.CANCELED if result['is_cancelled'] else ExchangeAPI.CLOSED)
+            ExchangeAPI.CANCELED if result['is_cancelled'] else
+            ExchangeAPI.CONFIRMED)
 
         return Order(
             result['id'],
