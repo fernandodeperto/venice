@@ -41,31 +41,34 @@ class MomentumStrategy(Strategy):
         if self.pending:
             order_status = self.api.order_status('Momentum')
 
-            if order_status == self.api.OPEN:
-                logger.debug('buy order {} confirmed'.format(self.pending))
+            if order_status == self.api.CONFIRMED:
+                logger.debug('order {} confirmed'.format(self.pending))
 
-                self.current = self.pending
-                self.pending = None
+                if self.pending.direction == self.api.BUY:
+                    self.current = self.pending
+                    self.pending = None
 
-            elif order_status == self.api.CLOSED:
-                logger.debug('sell order {} confirmed'.format(self.pending))
+                else:
+                    self.current = None
+                    self.pending = None
 
-                self.current = None
-                self.pending = None
+        if mom0[-1] > EPSILON and mom1[-1] > EPSILON:
+            if self.pending and self.pending.direction == self.api.SELL:
+                    self.api.cancel('Momentum')
+                    self.pending = None
 
-        if not self.current and mom0[-1] > EPSILON and mom1[-1] > EPSILON:
-            if self.pending:
-                self.api.cancel('Momentum')
+            if not self.current and not self.pending:
+                self.pending = self.api.order_buy('Momentum', self.api.STOP, price=high[-1])
+                logger.info('stop buy @ {:.5f}'.format(high[-1]))
 
-            self.pending = self.api.order_buy('Momentum', self.api.STOP, price=high[-1])
-            logger.info('stop buy @ {:.5f}'.format(ticker.last))
+        elif mom0[-1] < -EPSILON and mom1[-1] < -EPSILON:
+            if self.pending and self.pending.direction == self.api.BUY:
+                    self.api.cancel('Momentum')
+                    self.pending = None
 
-        elif self.current and mom0[-1] < -EPSILON and mom1[-1] < -EPSILON:
-            if self.pending:
-                self.api.cancel('Momentum')
-
-            self.pending = self.api.order_sell('Momentum', self.api.STOP, price=low[-1])
-            logger.info('stop sell @ {:.5f}'.format(ticker.last))
+            if self.current and not self.pending:
+                self.pending = self.api.order_sell('Momentum', self.api.STOP, price=low[-1])
+                logger.info('stop sell @ {:.5f}'.format(low[-1]))
 
         elif self.pending:
             self.api.cancel('Momentum')
