@@ -50,9 +50,6 @@ class StrategyAPI:
 
         self.live = live
 
-        print(live)
-        sys.exit(0)
-
     # Basic info
 
     def close(self, limit=10):
