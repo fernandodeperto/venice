@@ -1,5 +1,3 @@
-import sys
-
 from decimal import Decimal
 from logging import getLogger
 
@@ -22,6 +20,7 @@ class StrategyAPI:
     BUY = ExchangeAPI.BUY
     SELL = ExchangeAPI.SELL
 
+    NOT_FOUND = ''
     PENDING = ExchangeAPI.PENDING
     CONFIRMED = ExchangeAPI.CONFIRMED
 
@@ -219,12 +218,12 @@ class StrategyAPI:
 
     def order_status(self, name):
         if name in self.pending_orders:
-            pass
+            return self.PENDING
 
         if name in self.buy_orders:
-            pass
+            return self.CONFIRMED
 
-        pass
+        return self.NOT_FOUND
 
     def update(self):
         logger = getLogger(__name__)
@@ -236,17 +235,17 @@ class StrategyAPI:
                 try:
                     order_status = self.api.order_status(self.pending_orders[name].id_)
 
-                except:
+                except Exception:
                     pending_orders[name] = self.pending_orders[name]
                     return
 
             else:
                 order_status = self._order_status(self.pending_orders[name])
 
-            if order_status.status == self.OPEN:
+            if order_status.status == self.PENDING:
                 pending_orders[name] = order_status
 
-            elif order_status.status == self.CLOSED:
+            elif order_status.status == self.CONFIRMED:
                 if order_status.direction == self.BUY:
                     if name in self.buy_orders:
                         raise StrategyAPIError('buy order {} already exists'.format(name))
@@ -312,7 +311,7 @@ class StrategyAPI:
                (order_status.direction == self.SELL and ticker.last <= order_status.price))):
             order_status.status = self.CONFIRMED
 
-        elif order_status.type == self.TRAILING_STOP:
+        elif order_status.type_ == self.TRAILING_STOP:
             if order_status.direction == self.BUY:
                 order_status.pivot = min(order_status.pivot, ticker.last)
 
@@ -328,4 +327,4 @@ class StrategyAPI:
 
     def _format_order(self, direction, type_, pair, volume, price=0, price2=0):
         status = self.CONFIRMED if type_ == self.MARKET else self.PENDING
-        return Order(-1, direction, type_, pair, status, volume, price=price, price2=price2)
+        return [Order(-1, direction, type_, pair, status, volume, price=price, price2=price2)]
