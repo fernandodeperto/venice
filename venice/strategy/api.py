@@ -108,7 +108,8 @@ class StrategyAPI:
     # Comission and balance
 
     def balance(self):
-        used_volume = sum([x.volume for x in self.buy_orders])
+        used_volume = (sum([x.volume for x in self.buy_orders]) +
+                       sum([x.volume for x in self.open_orders]))
         ticker = self.ticker()
         return self.capital - used_volume * ticker.last
 
@@ -185,9 +186,16 @@ class StrategyAPI:
         if name in self.buy_orders:
             raise StrategyAPIError('buy order {} already exists'.format(name))
 
-        if not volume:
-            ticker = self.ticker()
-            volume = self.balance()/ticker.last
+        ticker = self.ticker()
+        balance = self.balance()
+        volume_max = balance / ticker.last
+
+        if volume and volume > volume_max:
+            raise StrategyAPIError('volume {} is higher than available balance {}/{}'.format(
+                volume, balance, volume_max))
+
+        elif not volume:
+            volume = volume_max
 
         return self._order(name, 'buy', type_, volume, price=price, price2=price2)
 
