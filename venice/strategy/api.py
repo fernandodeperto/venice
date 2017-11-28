@@ -214,7 +214,7 @@ class StrategyAPI:
 
         volume = self.buy_orders[name].volume
 
-        return self.order(name, 'sell', type_, volume, price=price, price2=price2)
+        return self._order(name, 'sell', type_, volume, price=price, price2=price2)
 
     def order_status(self, name):
         if name in self.pending_orders:
@@ -271,7 +271,7 @@ class StrategyAPI:
             self.cancel(name)
 
         for name in list(self.buy_orders.keys()):
-            self.order_sell(name)
+            self.order_sell(name, self.MARKET)
 
     def _order(self, name, direction, type_, volume, price=0, price2=0):
         logger = getLogger(__name__)
