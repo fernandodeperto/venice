@@ -412,7 +412,8 @@ class BitfinexAPI(ExchangeAPI):
     def _format_order(result):
         status = (
             ExchangeAPI.PENDING if result['is_live'] else
-            ExchangeAPI.CANCELED if result['is_cancelled'] else ExchangeAPI.CLOSED)
+            ExchangeAPI.CANCELED if result['is_cancelled'] else
+            ExchangeAPI.CONFIRMED)
 
         return Order(
             result['id'],

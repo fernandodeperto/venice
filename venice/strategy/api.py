@@ -1,8 +1,11 @@
+import sys
+
 from decimal import Decimal
 from logging import getLogger
 
 from ..util import decimal_places
 from ..api.api import ExchangeAPI
+from ..api.order import Order
 
 
 class StrategyAPIError(Exception):
@@ -22,7 +25,7 @@ class StrategyAPI:
     PENDING = ExchangeAPI.PENDING
     CONFIRMED = ExchangeAPI.CONFIRMED
 
-    def __init__(self, api, pair, period, capital, comission=0):
+    def __init__(self, api, pair, period, capital, comission=0, live=True):
         self.api = api
 
         self._pair = pair
@@ -44,6 +47,11 @@ class StrategyAPI:
             raise StrategyAPIError
 
         self._decimal_places = decimal_places(self._precision)
+
+        self.live = live
+
+        print(live)
+        sys.exit(0)
 
     # Basic info
 
@@ -174,7 +182,8 @@ class StrategyAPI:
         if name not in self.pending_orders:
             raise StrategyAPIError('pending order {} not found'.format(name))
 
-        self.api.cancel_order(self.pending_orders[name].id_)
+        if self.live:
+            self.api.cancel_order(self.pending_orders[name].id_)
 
         logger.info('cancel order {}: {}'.format(name, self.pending_orders[name]))
 
@@ -226,13 +235,16 @@ class StrategyAPI:
         pending_orders = {}
 
         for name in self.pending_orders:
-            # Try to update a pending order. If it doesn't work, put it back in the list.
-            try:
-                order_status = self.api.order_status(self.pending_orders[name].id_)
+            if self.live:
+                try:
+                    order_status = self.api.order_status(self.pending_orders[name].id_)
 
-            except:
-                pending_orders[name] = self.pending_orders[name]
-                return
+                except:
+                    pending_orders[name] = self.pending_orders[name]
+                    return
+
+            else:
+                order_status = self._order_status(self.pending_orders[name])
 
             if order_status.status == self.OPEN:
                 pending_orders[name] = order_status
@@ -271,8 +283,12 @@ class StrategyAPI:
         if name in self.pending_orders:
             self.cancel(name)
 
-        order_statuses = self.api.add_order(
-            self.pair, direction, type_, volume=volume, price=price, price2=price2)
+        if self.live:
+            order_statuses = self.api.add_order(
+                self.pair, direction, type_, volume=volume, price=price, price2=price2)
+
+        else:
+            order_statuses = self._format_order(direction, type_, self.pair, volume, price, price2)
 
         if len(order_statuses) > 1:
             raise StrategyAPIError('orders with multiple order statuses not supported')
@@ -282,3 +298,37 @@ class StrategyAPI:
         logger.info('new {} order {}: {}'.format(direction, name, self.pending_orders[name]))
 
         return self.pending_orders[name]
+
+    def _order_status(self, order_status):
+        ticker = self.ticker()
+
+        if order_status.type_ == self.MARKET:
+            order_status.status = self.CONFIRMED
+
+        elif (order_status.type_ == self.LIMIT and
+              ((order_status.direction == self.buy and ticker.last <= order_status.price) or
+               (order_status.direction == self.sell and ticker.last >= order_status.price))):
+            order_status.status = self.CONFIRMED
+
+        elif (order_status.type_ == self.STOP and
+              ((order_status.direction == self.BUY and ticker.last >= order_status.price) or
+               (order_status.direction == self.SELL and ticker.last <= order_status.price))):
+            order_status.status = self.CONFIRMED
+
+        elif order_status.type == self.TRAILING_STOP:
+            if order_status.direction == self.BUY:
+                order_status.pivot = min(order_status.pivot, ticker.last)
+
+                if ticker.last >= order_status.pivot + order_status.price2:
+                    order_status.status = self.CONFIRMED
+            else:
+                order_status.pivot = max(order_status.pivot, ticker.last)
+
+                if ticker.last <= order_status.pivot - order_status.price2:
+                    order_status.status = self.CONFIRMED
+
+        return order_status
+
+    def _format_order(self, direction, type_, pair, volume, price=0, price2=0):
+        status = self.CONFIRMED if type_ == self.MARKET else self.PENDING
+        return Order(-1, direction, type_, pair, status, volume, price=price, price2=price2)
