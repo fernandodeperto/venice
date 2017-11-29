@@ -27,8 +27,6 @@ class StrategyAPI:
     def __init__(self, api, pair, period, capital, comission=0, live=True):
         self.api = api
 
-        raise StrategyAPIError
-
         self._pair = pair
         self._period = period
         self._capital = Decimal.from_float(capital)
