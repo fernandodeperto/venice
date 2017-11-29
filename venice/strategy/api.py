@@ -46,7 +46,7 @@ class StrategyAPI:
             self._precision = self.api.pairs[self._pair].precision
 
         except:
-            raise StrategyAPIError
+            raise StrategyAPIError('could not get pairs info')
 
         self._decimal_places = decimal_places(self._precision)
 

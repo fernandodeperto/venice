@@ -59,20 +59,31 @@ class ExchangeConnection(metaclass=abc.ABCMeta):
             response = requests.request(method, self.uri + path, **kwargs)
 
         except ReadTimeout:
+            logger.debug('timeout')
             raise ExchangeConnectionException('timeout')
+
+        except Exception as e:
+            logger.debug('request failed: {}'.format(e))
+            raise ExchangeConnectionException('request failes')
 
         logger.debug(
             'new request: method={}, path={}, kwargs={}, ok={}, status_code={}, text={}'.format(
                 method, path, kwargs, response.ok, response.status_code, response.text))
 
         if not response.ok:
-            raise ExchangeConnectionException(response.text)
+            logger.debug('response not ok, text={}'.format(response.text))
+            raise ExchangeConnectionException('response not ok')
 
         try:
             return json.loads(response.text)
 
         except ValueError:
-            raise ExchangeConnectionException(response.text)
+            logger.debug('json parsing failed: {}'.format(response.text))
+            raise ExchangeConnectionException('json parsing failed')
+
+        except Exception as e:
+            logger.debug('json parsing ({}) failed with unknown error: {}'.format(
+                response.text, e))
 
     @staticmethod
     def _format_get_params(params):
