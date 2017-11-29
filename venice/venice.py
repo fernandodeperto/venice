@@ -2,6 +2,7 @@ import argparse
 import inspect
 import signal
 import time
+import sys
 
 from decimal import getcontext, setcontext, BasicContext, FloatOperation
 from logging import getLogger
@@ -59,7 +60,7 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
 
     if args.exchange not in exchange_classes.keys():
-        raise ValueError('invalid exchange')
+        raise ValueError
 
     chosen_exchange = exchange_classes[args.exchange]()
 
@@ -79,30 +80,30 @@ def main():
             if new_strategy:
                 chosen_strategy = new_strategy
 
-        except Exception as e:
-            logger.exception(e)
+        except Exception:
+            logger.exception('error running strategy')
 
         time.sleep(max(args.refresh - (time.time() - start_time), MIN_SLEEP))
 
         try:
             strategy_api.update()
 
-        except Exception as e:
-            logger.exception(e)
+        except Exception:
+            logger.exception('error updating strategy api')
 
     # Clean up strategy if necessary
     try:
         chosen_strategy.clean_up()
 
-    except Exception as e:
-        logger.exception(e)
+    except Exception:
+        logger.exception('error cleaning up the strategy')
 
     # Ask current strategy to sell closed buy orders
     try:
         strategy_api.clean_up()
 
-    except Exception as e:
-        logger.exception(e)
+    except Exception:
+        logger.exception('error cleaning up the strategy api')
 
 
 def configure_parsers(parsers, classes):
