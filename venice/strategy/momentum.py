@@ -41,8 +41,9 @@ class MomentumStrategy(Strategy):
         if self.pending:
             order_status = self.api.order_status('Momentum')
 
+            # Buy order
             if order_status == self.api.CONFIRMED:
-                logger.debug('order {} confirmed'.format(self.pending))
+                logger.debug('buy order {} confirmed'.format(self.pending))
 
                 if self.pending.direction == self.api.BUY:
                     self.current = self.pending

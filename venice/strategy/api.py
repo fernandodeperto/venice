@@ -38,6 +38,9 @@ class StrategyAPI:
         # Sell order needs to match a closed buy order
         self.buy_orders = {}
 
+        # Confirmed sell orers
+        self.sell_orders = {}
+
         # Get price precision from exchange API
         try:
             self._precision = self.api.pairs[self._pair].precision
@@ -195,6 +198,9 @@ class StrategyAPI:
         if name in self.buy_orders:
             raise StrategyAPIError('buy order {} already exists'.format(name))
 
+        if name in self.sell_orders:
+            del self.sell_orders[name]
+
         balance = self.balance()
         volume_max = self.volume_max()
 
@@ -220,7 +226,7 @@ class StrategyAPI:
         if name in self.pending_orders:
             return self.PENDING
 
-        if name in self.buy_orders:
+        if name in self.buy_orders or name in self.sell_orders:
             return self.CONFIRMED
 
         return self.NOT_FOUND
@@ -257,6 +263,7 @@ class StrategyAPI:
                         raise StrategyAPIError('buy order {} not found'.format(name))
 
                     del self.buy_orders[name]
+                    self.sell_orders[name] = order_status
 
             elif order_status.status == self.CANCELED:
                 raise StrategyAPIError('order {} canceled unexpectedly'.format(name))
