@@ -42,11 +42,7 @@ class StrategyAPI:
         self.sell_orders = {}
 
         # Get price precision from exchange API
-        try:
-            self._precision = self.api.pairs[self._pair].precision
-
-        except:
-            raise StrategyAPIError('could not get pairs info')
+        self._precision = self.api.pairs[self._pair].precision
 
         self._decimal_places = decimal_places(self._precision)
 
@@ -243,7 +239,7 @@ class StrategyAPI:
 
                 except Exception:
                     pending_orders[name] = self.pending_orders[name]
-                    return
+                    raise
 
             else:
                 order_status = self._order_status(self.pending_orders[name])

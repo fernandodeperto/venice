@@ -79,9 +79,6 @@ def main():
             if new_strategy:
                 chosen_strategy = new_strategy
 
-        except connection.ExchangeConnectionException as e:
-            logger.debug('exception: {}'.format(e.__class__.__name__))
-
         except Exception as e:
             logger.exception(e)
 
@@ -90,9 +87,6 @@ def main():
         try:
             strategy_api.update()
 
-        except connection.ExchangeConnectionException as e:
-            logger.debug('exception: {}'.format(e.__class__.__name__))
-
         except Exception as e:
             logger.exception(e)
 
@@ -100,18 +94,12 @@ def main():
     try:
         chosen_strategy.clean_up()
 
-    except connection.ExchangeConnectionException as e:
-        logger.debug('exception: {}'.format(e.__class__.__name__))
-
     except Exception as e:
         logger.exception(e)
 
     # Ask current strategy to sell closed buy orders
     try:
         strategy_api.clean_up()
-
-    except connection.ExchangeConnectionException as e:
-        logger.debug('exception: {}'.format(e.__class__.__name__))
 
     except Exception as e:
         logger.exception(e)
