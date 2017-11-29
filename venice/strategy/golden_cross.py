@@ -1,10 +1,10 @@
 from logging import getLogger
 
 from .strategy import Strategy
-from .indicator import sma
+from .indicator import crossover, crossunder, sma
 
 
-class SMAStrategy(Strategy):
+class GoldenCrossStrategy(Strategy):
     def __init__(self, api, fast_sma, slow_sma, *args, **kwargs):
         super().__init__(api, *args, **kwargs)
 
@@ -34,8 +34,10 @@ class SMAStrategy(Strategy):
         sma_fast = sma(close, self.fast_sma)
         sma_slow = sma(close, self.slow_sma)
 
-        logger.debug('close={}, sma_fast={}, sma_slow={}'.format(
-            close[-1], sma_fast[-1] - sma_slow[-1]))
+        logger.debug(
+            'close={}, sma=({}, {}), crossover={}, crossunder={}'.format(
+                close[-1], sma_fast[-2] - sma_slow[-2], sma_fast[-1] - sma_slow[-1],
+                crossover(sma_fast, sma_slow), crossunder(sma_fast, sma_slow)))
 
         if self.pending:
             order_status = self.api.order_status('Momentum')
@@ -50,13 +52,16 @@ class SMAStrategy(Strategy):
                     self.current = None
                     self.pending = None
 
-        if sma_fast[-1] > sma_slow[-1]:
+        if crossover(sma_fast, sma_slow):
             if not self.current and not self.pending:
-                self.pending = self.api.order_buy('SMA', self.api.MARKET)
+                self.pending = self.api.order_buy('GoldenCross', self.api.MARKET)
 
-        else:
+        elif crossunder(sma_fast, sma_slow):
             if self.current and not self.pending:
-                self.pending = self.api.order_sell('SMA', self.api.MARKET)
+                self.pending = self.api.order_sell('GoldenCross', self.api.MARKET)
+
+        elif self.pending:
+            self.api.cancel('GoldenCross')
 
         logger.debug('current={}, pending={}'.format(self.current, self.pending))
 

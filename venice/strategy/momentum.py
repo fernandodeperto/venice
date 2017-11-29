@@ -38,6 +38,9 @@ class MomentumStrategy(Strategy):
         mom0 = mom(close, self.length)
         mom1 = mom(mom0, 1)
 
+        logger.debug('last={:.5f}, mom0={:.5f}, mom1={:.5f}'.format(
+            ticker.last, mom0[-1], mom1[-1]))
+
         if self.pending:
             order_status = self.api.order_status('Momentum')
 
@@ -71,8 +74,8 @@ class MomentumStrategy(Strategy):
             self.api.cancel('Momentum')
             self.pending = None
 
-        logger.debug('last={:.5f}, mom0={:.5f}, mom1={:.5f}, current={}, pending={}'.format(
-            ticker.last, mom0[-1], mom1[-1], self.current, self.pending))
+        logger.debug('current={}, pending={}'.format(
+            self.current, self.pending))
 
     def clean_up(self):
         pass
