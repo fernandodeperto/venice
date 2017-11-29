@@ -43,8 +43,6 @@ class MomentumStrategy(Strategy):
 
             # Buy order
             if order_status == self.api.CONFIRMED:
-                logger.debug('buy order {} confirmed'.format(self.pending))
-
                 if self.pending.direction == self.api.BUY:
                     self.current = self.pending
                     self.pending = None
@@ -60,7 +58,6 @@ class MomentumStrategy(Strategy):
 
             if not self.current and not self.pending:
                 self.pending = self.api.order_buy('Momentum', self.api.STOP, price=high[-1])
-                logger.info('stop buy @ {:.5f}'.format(high[-1]))
 
         elif mom0[-1] < -EPSILON and mom1[-1] < -EPSILON:
             if self.pending and self.pending.direction == self.api.BUY:
@@ -69,7 +66,6 @@ class MomentumStrategy(Strategy):
 
             if self.current and not self.pending:
                 self.pending = self.api.order_sell('Momentum', self.api.STOP, price=low[-1])
-                logger.info('stop sell @ {:.5f}'.format(low[-1]))
 
         elif self.pending:
             self.api.cancel('Momentum')
