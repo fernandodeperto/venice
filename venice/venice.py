@@ -48,6 +48,7 @@ def main():
     args = parser.parse_args()
 
     fileConfig('logging.conf')
+    logger = getLogger(__name__)
 
     # Decimal module initialization
     setcontext(BasicContext)
@@ -76,8 +77,8 @@ def main():
         '%(asctime)s %(levelname)s %(name)s.%(funcName)s:%(lineno)d: %(message)s')
     file_handler.setFormatter(formatter)
 
-    logger = getLogger('venice')
-    logger.addHandler(file_handler)
+    strategy_logger = getLogger('venice')
+    strategy_logger.addHandler(file_handler)
 
     while run:
         start_time = time.time()
