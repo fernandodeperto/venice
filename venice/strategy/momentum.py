@@ -30,7 +30,7 @@ class MomentumStrategy(Strategy):
         logger = getLogger(__name__)
 
         ticker = self.api.ticker()
-        ohlc = self.api.ohlc(limit=self.length)
+        ohlc = self.api.ohlc(limit=self.length + 1)
 
         close = [x.close for x in ohlc]
         high = [x.high for x in ohlc]
