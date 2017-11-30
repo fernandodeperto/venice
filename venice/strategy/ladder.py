@@ -45,7 +45,7 @@ class LadderStrategy(Strategy):
     def run(self):
         logger = getLogger(__name__)
 
-        ticker = self.api.ticker()
+        ticker = self.api.ticker
 
         if self.pending_order and self.api.order_status(self.pending_order.name) == self.api.OPEN:
             try:
