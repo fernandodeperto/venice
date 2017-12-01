@@ -14,7 +14,6 @@ class Order:
         self.price2 = Decimal(price2)
         self.avg_price = Decimal(avg_price) if avg_price else None
         self.remaining = Decimal(remaining) if remaining else None
-        self.pivot = None
 
     def __str__(self):
         if self.price:

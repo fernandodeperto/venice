@@ -259,14 +259,19 @@ class StrategyAPI:
                     if name not in self.buy_orders:
                         raise StrategyAPIError('buy order {} not found'.format(name))
 
+                    price = (self.pending_orders[name].avg_execution_price -
+                             self.buy_orders[name].avg_execution_price)
+                    profit = price * self.pending_orders[name].volume
+                    logger.info('trade confirmed, price={}, profit={}'.format(price, profit))
+
                     del self.buy_orders[name]
                     self.sell_orders[name] = order_status
 
             elif order_status.status == self.CANCELED:
                 raise StrategyAPIError('order {} canceled unexpectedly'.format(name))
 
-            logger.debug('{} order {} {}: {}'.format(
-                order_status.direction, name, order_status.status, order_status))
+            logger.debug('order {} {}: {}'.format(
+                name, order_status.status, order_status))
 
         self.pending_orders = pending_orders
 
