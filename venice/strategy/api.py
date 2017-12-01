@@ -24,13 +24,16 @@ class StrategyAPI:
     PENDING = ExchangeAPI.PENDING
     CONFIRMED = ExchangeAPI.CONFIRMED
 
+    OHLC_DEFAULT_LIMIT = 40
+
     def __init__(self, api, pair, period, capital, comission=0, live=True):
         self.api = api
 
-        self._pair = pair
-        self._period = period
-        self._capital = Decimal.from_float(capital)
-        self._comission = Decimal.from_float(comission)
+        self.pair = pair
+        self.period = period
+        self.capital = Decimal.from_float(capital)
+        self.comission = Decimal.from_float(comission)
+        self.live = live
 
         # Only one pending order with each order name
         self.pending_orders = {}
@@ -41,12 +44,13 @@ class StrategyAPI:
         # Confirmed sell orers
         self.sell_orders = {}
 
-        # Get price precision from exchange API
-        self._precision = self.api.pairs[self._pair].precision
+        # Properties
+        self._precision = None
+        self._decimal_places = None
 
-        self._decimal_places = decimal_places(self._precision)
-
-        self.live = live
+        # Caching
+        self._ohlc = None
+        self._ticker = None
 
     # Basic info
 
@@ -57,7 +61,10 @@ class StrategyAPI:
         return self.api.currencies(self.pair)
 
     @property
-    def DECIMAL_PLACES(self):
+    def decimal_places(self):
+        if not self._decimal_places:
+            self._decimal_places = decimal_places(self.precision)
+
         return self._decimal_places
 
     def high(self, limit=10):
@@ -83,46 +90,45 @@ class StrategyAPI:
 
     def ohlc(self, limit=10):
         """Ticker information."""
-        return self.api.ohlc(self.pair, self.period, limit=limit)
+        if limit > self.OHLC_DEFAULT_LIMIT:
+            raise StrategyAPIError('limit {} exceeds maximum {}'.format(
+                limit, self.OHLC_DEFAULT_LIMIT))
+
+        if not self._ohlc:
+            self._ohlc = self.api.ohlc(self.pair, self.period, limit=self.OHLC_DEFAULT_LIMIT)
+
+        return self._ohlc[-limit:]
 
     def open(self, limit=10):
         return [x.open_ for x in self.ohlc(limit=limit)]
 
     @property
-    def pair(self):
-        """Trading pair."""
-        return self._pair
-
-    @property
-    def period(self):
-        """Candle period in minutes."""
-        return self._period
-
-    @property
     def precision(self):
         """Price precision for the current pair."""
+        if not self._precision:
+            self._precision = self.api.pairs[self.pair].precision
+
         return self._precision
 
+    @property
     def ticker(self):
         """Current ticker."""
-        return self.api.ticker(self.pair)
+        if not self._ticker:
+            self._ticker = self.api.ticker(self.pair)
+
+        return self._ticker
 
     # Comission and balance
 
     def balance(self):
-        ticker = self.ticker()
+        ticker = self.ticker
 
         used_volume = (sum([x.volume for x in self.buy_orders]) +
                        sum([x.volume for x in self.pending_orders]))
         return self.capital - used_volume * ticker.last
 
-    @property
-    def comission(self):
-        """Comission percent."""
-        return self._comission
-
     def volume_max(self):
-        ticker = self.ticker()
+        ticker = self.ticker
         return self.balance() * (1 - self.comission / 100) / ticker.last
 
     # Trading statistics
@@ -130,11 +136,6 @@ class StrategyAPI:
     def avg_price(self):
         """Average entry price of current closed buy orders."""
         raise NotImplementedError
-
-    @property
-    def capital(self):
-        """The amount of initial capital set in the strategy properties."""
-        return self._capital
 
     def closed_trades(self):
         """Number of closed trades for the whole interval."""
@@ -269,6 +270,9 @@ class StrategyAPI:
 
         self.pending_orders = pending_orders
 
+        self._ohlc = None
+        self._ticker = None
+
     def clean_up(self):
         for name in list(self.pending_orders.keys()):
             self.cancel(name)
@@ -299,7 +303,7 @@ class StrategyAPI:
         return self.pending_orders[name]
 
     def _order_status(self, order_status):
-        ticker = self.ticker()
+        ticker = self.ticker
 
         if order_status.type_ == self.MARKET:
             order_status.status = self.CONFIRMED

@@ -32,7 +32,7 @@ class TrailingStrategy(Strategy):
     def run(self):
         logger = getLogger(__name__)
 
-        ticker = self.api.ticker()
+        ticker = self.api.ticker
 
         if self.pending:
             order_status = self.api.order_status('Trailing')
