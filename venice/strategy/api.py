@@ -259,8 +259,8 @@ class StrategyAPI:
                     if name not in self.buy_orders:
                         raise StrategyAPIError('buy order {} not found'.format(name))
 
-                    price = (self.pending_orders[name].avg_execution_price -
-                             self.buy_orders[name].avg_execution_price)
+                    price = (self.pending_orders[name].avg_price -
+                             self.buy_orders[name].avg_price
                     profit = price * self.pending_orders[name].volume
                     logger.info('trade confirmed, price={}, profit={}'.format(price, profit))
 
