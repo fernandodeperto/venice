@@ -259,8 +259,7 @@ class StrategyAPI:
                     if name not in self.buy_orders:
                         raise StrategyAPIError('buy order {} not found'.format(name))
 
-                    price = (self.pending_orders[name].avg_price -
-                             self.buy_orders[name].avg_price)
+                    price = order_status.avg_price - self.buy_orders[name].avg_price
                     profit = price * self.pending_orders[name].volume
                     logger.info('trade confirmed, price={}, profit={}'.format(price, profit))
 
@@ -339,4 +338,6 @@ class StrategyAPI:
 
     def _format_order(self, direction, type_, pair, volume, price=0, price2=0):
         status = self.CONFIRMED if type_ == self.MARKET else self.PENDING
-        return [Order(-1, direction, type_, pair, status, volume, price=price, price2=price2)]
+        return [Order(
+            -1, direction, type_, pair, status, volume, price=price, price2=price2,
+            avg_price=price, remaining=0)]
