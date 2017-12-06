@@ -47,6 +47,7 @@ class StrategyAPI:
         # Properties
         self._precision = None
         self._decimal_places = None
+        self._balance = Decimal.from_float(capital)
 
         # Caching
         self._ohlc = None
@@ -120,16 +121,14 @@ class StrategyAPI:
 
     # Comission and balance
 
+    @property
     def balance(self):
-        ticker = self.ticker
-
-        used_volume = (sum([x.volume for x in self.buy_orders]) +
-                       sum([x.volume for x in self.pending_orders]))
-        return self.capital - used_volume * ticker.last
+        return self._balance - sum(
+            [x.cost for x in list(self.pending_orders.values()) + list(self.buy_orders.values())])
 
     def volume_max(self):
         ticker = self.ticker
-        return self.balance() * (1 - self.comission / 100) / ticker.last
+        return self.balance * (1 - self.comission / 100) / ticker.last
 
     # Trading statistics
 
@@ -198,12 +197,11 @@ class StrategyAPI:
         if name in self.sell_orders:
             del self.sell_orders[name]
 
-        balance = self.balance()
         volume_max = self.volume_max()
 
         if volume and volume > volume_max():
             raise StrategyAPIError('volume {} is higher than available balance {}/{}'.format(
-                volume, balance, volume_max))
+                volume, self.balance, volume_max))
 
         elif not volume:
             volume = volume_max
@@ -259,9 +257,13 @@ class StrategyAPI:
                     if name not in self.buy_orders:
                         raise StrategyAPIError('buy order {} not found'.format(name))
 
-                    price = order_status.avg_price - self.buy_orders[name].avg_price
-                    profit = price * self.pending_orders[name].volume
-                    logger.info('trade confirmed, price={}, profit={}'.format(price, profit))
+                    self._balance += order_status.cost - self.buy_orders[name].cost
+
+                    logger.info(
+                        'trade confirmed, name={}, buy={}, sell={}, profit={},'
+                        'balance={}'.format(
+                            name, self.buy_orders[name].avg_price, order_status.avg_price,
+                            order_status.cost - self.buy_orders[name].cost, self._balance))
 
                     del self.buy_orders[name]
                     self.sell_orders[name] = order_status
@@ -296,7 +298,8 @@ class StrategyAPI:
 
         else:
             order_statuses = self._format_order(
-                direction, type_, self.pair, volume, price, price2, pivot=price)
+                direction, type_, self.pair, volume, price=price, price2=price2,
+                avg_price=self.ticker.last)
 
         if len(order_statuses) > 1:
             raise StrategyAPIError('orders with multiple order statuses not supported')
@@ -341,7 +344,6 @@ class StrategyAPI:
 
     def _format_order(self, direction, type_, pair, volume, price=0, price2=0, avg_price=None,
                       remaining=None, pivot=None):
-        status = self.CONFIRMED if type_ == self.MARKET else self.PENDING
         return [Order(
-            -1, direction, type_, pair, status, volume, price=price, price2=price2,
+            -1, direction, type_, pair, self.PENDING, volume, price=price, price2=price2,
             avg_price=avg_price, remaining=remaining, pivot=pivot)]

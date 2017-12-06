@@ -14,7 +14,11 @@ class Order:
         self.price2 = Decimal(price2)
         self.avg_price = Decimal(avg_price) if avg_price else None
         self.remaining = Decimal(remaining) if remaining else None
-        self.pivot = Decimal(pivot)
+        self.pivot = Decimal(pivot) if pivot else None
+
+    @property
+    def cost(self):
+        return self.volume * (self.avg_price if self.avg_price else self.price)
 
     def __str__(self):
         if self.price:
