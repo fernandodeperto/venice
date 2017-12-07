@@ -39,7 +39,7 @@ class EMAStrategy(Strategy):
             close[-1], ema_fast[-1], ema_slow[-1]))
 
         if self.pending:
-            order_status = self.api.order_status('Momentum')
+            order_status = self.api.order_status('EMA')
 
             # Buy order
             if order_status == self.api.CONFIRMED:
