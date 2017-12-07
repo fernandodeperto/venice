@@ -24,7 +24,7 @@ class StrategyAPI:
     PENDING = ExchangeAPI.PENDING
     CONFIRMED = ExchangeAPI.CONFIRMED
 
-    OHLC_DEFAULT_LIMIT = 40
+    OHLC_DEFAULT_LIMIT = 100
 
     def __init__(self, api, pair, period, capital, comission=0, live=True):
         self.api = api

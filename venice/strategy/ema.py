@@ -1,3 +1,4 @@
+from decimal import Decimal
 from logging import getLogger
 
 from .strategy import Strategy
@@ -30,12 +31,14 @@ class EMAStrategy(Strategy):
     def run(self):
         logger = getLogger(__name__)
 
-        close = [x.close for x in self.api.ohlc(limit=80)]
+        close = [x.close for x in self.api.ohlc(limit=100)]
         ema_fast = ema(close, self.fast_ema)
         ema_slow = ema(close, self.slow_ema)
 
         logger.debug('close={}, ema_fast={}, ema_slow={}'.format(
-            close[-1], ema_fast[-1] - ema_slow[-1]))
+            close[-1], ema_fast[-1], ema_slow[-1]))
+
+        return
 
         if self.pending:
             order_status = self.api.order_status('Momentum')

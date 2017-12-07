@@ -9,11 +9,11 @@ def sma(source, length):
 
 
 def ema(source, length):
-    result = [source[0]]
-    multiplier = 2 / (length + 1)
+    result = [sum(source[0:length]) / length]
+    multiplier = Decimal(2) / Decimal(length + 1)
 
-    for i in range(1, len(source)):
-        result.append(source[i] * multiplier + result[i-1] * (1 - multiplier))
+    for i in range(length, len(source)):
+        result.append(source[i] * multiplier + result[i-length] * (1 - multiplier))
 
     return result
 
