@@ -38,8 +38,6 @@ class EMAStrategy(Strategy):
         logger.debug('close={}, ema_fast={}, ema_slow={}'.format(
             close[-1], ema_fast[-1], ema_slow[-1]))
 
-        return
-
         if self.pending:
             order_status = self.api.order_status('Momentum')
 
