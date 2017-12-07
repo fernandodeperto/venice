@@ -2,12 +2,31 @@ import sys
 
 from decimal import Decimal
 
-from venice.util import decimal_div
-
 
 def sma(source, length):
     return [sum(source[x - length + 1:x + 1]) / length if x >= length else
             sum(source[0:x + 1]) / length for x in range(0, len(source))]
+
+
+def ema(source, length):
+    result = [source[0]]
+    multiplier = 2 / (length + 1)
+
+    for i in range(1, len(source)):
+        result.append(source[i] * multiplier + result[i-1] * (1 - multiplier))
+
+    return result
+
+
+def macd(fast_length, slow_length, source, signal_length):
+    fast_ema = ema(source, fast_length)
+    slow_ema = ema(source, slow_length)
+
+    macd_ = [fast_ema[i] - slow_ema[i] for i in range(0, len(fast_ema))]
+    signal = ema(macd_, signal_length)
+    histogram = [macd_[i] - signal[i] for i in range(0, len(macd_))]
+
+    return macd_, signal, histogram
 
 
 def mom(source, length):
