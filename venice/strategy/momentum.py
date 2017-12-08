@@ -7,12 +7,16 @@ from venice.util import EPSILON
 
 class MomentumStrategy(Strategy):
     def __init__(self, api, length, *args, **kwargs):
+        logger = getLogger(__name__)
+
         super().__init__(api, *args, **kwargs)
 
         self.length = length
 
         self.current = None
         self.pending = None
+
+        logger.debug('momentum strategy started with length={}'.format(self.length))
 
     @staticmethod
     def descr_text():

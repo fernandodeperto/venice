@@ -5,10 +5,14 @@ from .strategy import Strategy
 
 class TestStrategy(Strategy):
     def __init__(self, api, *args, **kwargs):
+        logger = getLogger(__name__)
+
         super().__init__(api, *args, **kwargs)
 
         self.current = None
         self.pending = None
+
+        logger.debug('test stratgy started')
 
     @staticmethod
     def descr_text():

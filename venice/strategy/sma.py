@@ -6,6 +6,8 @@ from .indicator import sma
 
 class SMAStrategy(Strategy):
     def __init__(self, api, fast_sma, slow_sma, *args, **kwargs):
+        logger = getLogger(__name__)
+
         super().__init__(api, *args, **kwargs)
 
         self.fast_sma = fast_sma
@@ -13,6 +15,9 @@ class SMAStrategy(Strategy):
 
         self.current = None
         self.pending = None
+
+        logger.debug('sma strategy started with fast_sma={}, slow_sma={}'.format(
+            self.fast_sma, self.slow_sma))
 
     @staticmethod
     def descr_text():

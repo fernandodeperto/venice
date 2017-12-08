@@ -15,7 +15,7 @@ class TrailingStrategy(Strategy):
         self.current = None
         self.pending = None
 
-        logger.info('trailing stop started with stop={}'.format(self.stop))
+        logger.debug('trailing stop started with stop={}'.format(self.stop))
 
     @staticmethod
     def descr_text():

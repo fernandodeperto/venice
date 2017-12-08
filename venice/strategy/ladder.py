@@ -25,7 +25,7 @@ class LadderStrategy(Strategy):
         self.correction = Decimal.from_float(0.5)
         self.order_num = 0
 
-        logger.info('ladder strategy started with {} steps, stop={:.5f}'.format(
+        logger.info('ladder strategy started with steps={}, stop={}'.format(
             self.steps, self.stop))
 
     @staticmethod

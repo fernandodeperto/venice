@@ -7,6 +7,8 @@ from .indicator import ema
 
 class EMAStrategy(Strategy):
     def __init__(self, api, fast_ema, slow_ema, *args, **kwargs):
+        logger = getLogger(__name__)
+
         super().__init__(api, *args, **kwargs)
 
         self.fast_ema = fast_ema
@@ -14,6 +16,9 @@ class EMAStrategy(Strategy):
 
         self.current = None
         self.pending = None
+
+        logger.debug('ema strategy started with fast_ema={}, slow_ema={}'.format(
+            self.fast_ema, self.slow_ema))
 
     @staticmethod
     def descr_text():
