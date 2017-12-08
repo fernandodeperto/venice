@@ -180,7 +180,7 @@ class StrategyAPI:
         if self.live:
             self.api.cancel_order(self.pending_orders[name].id_)
 
-        logger.info('cancel order {}: {}'.format(name, self.pending_orders[name]))
+        logger.debug('cancel order {}: {}'.format(name, self.pending_orders[name]))
 
         del self.pending_orders[name]
 
