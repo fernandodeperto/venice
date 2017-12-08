@@ -40,7 +40,7 @@ class SMAStrategy(Strategy):
         sma_slow = sma(close, self.slow_sma)
 
         logger.debug('close={}, sma_fast={}, sma_slow={}'.format(
-            close[-1], sma_fast[-1] - sma_slow[-1]))
+            close[-1], sma_fast[-1], sma_slow[-1]))
 
         if self.pending:
             order_status = self.api.order_status('Momentum')
