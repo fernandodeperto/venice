@@ -176,6 +176,10 @@ class BitfinexAPI(ExchangeAPI):
     def cancel_orders(self, ids):
         self._cancel_orders(ids)
 
+    def fees(self):
+        fees = self._fees()
+        return Decimal.from_float(fees['maker_fee']), Decimal.from_float(fees['taker_fee'])
+
     def order_history(self, pair=None, limit=100):
         result = self._order_history(limit)
         return [self._format_order(x) for x in result if not pair or x['symbol'] == pair]
@@ -243,6 +247,10 @@ class BitfinexAPI(ExchangeAPI):
             return c.query_private('order/cancel/multi', params={
                 'order_ids': order_ids,
             })
+
+    def _fees(self):
+        with BitfinexConnection() as c:
+            return c.query_private('summary')
 
     def _order(self, pair, side, type_, volume=0, price=0, post_only=True, oco=False,
                oco_price=0):

@@ -81,3 +81,14 @@ class TestBitfinexAPI(unittest.TestCase):
         result = self.api.pairs
         logger.debug(result)
         self.assertIsNotNone(result)
+
+    def test_fees(self):
+        logger = logging.getLogger(__name__)
+
+        maker_fee, taker_fee = self.api.fees()
+
+        logger.debug(maker_fee)
+        self.assertIsNotNone(maker_fee)
+
+        logger.debug(taker_fee)
+        self.assertIsNotNone(taker_fee)

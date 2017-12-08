@@ -271,6 +271,13 @@ class StrategyAPI:
                     del self.buy_orders[name]
                     self.sell_orders[name] = order_status
 
+                maker_fee, taker_fee = self.api.fees()
+                order_fee = (order_status.cost * (maker_fee if order_status.type_ == self.LIMIT
+                                                  else taker_fee))
+                self._balance -= order_fee
+
+                logger.debug('order fee={}, balance={}'.format(order_fee, self._balance))
+
             elif order_status.status == self.CANCELED:
                 raise StrategyAPIError('order {} canceled unexpectedly'.format(name))
 

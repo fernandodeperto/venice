@@ -85,6 +85,9 @@ class ExchangeAPI:
     def currencies(pair):
         return pair[0:3], pair[3:6]
 
+    def fees(self):
+        return NotImplementedError
+
     def ohlc(self, pair, interval, limit=100):
         raise NotImplementedError
 
