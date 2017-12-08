@@ -21,8 +21,8 @@ class Order:
         return self.volume * (self.avg_price if self.avg_price else self.price)
 
     def __str__(self):
-        return '{} {} {} @ {}'.format(
-            self.direction, self.volume, self.pair, self.price)
+        return '{} {} {} @ {}, avg {}'.format(
+            self.direction, self.volume, self.pair, self.price, self.avg_price)
 
     def __repr__(self):
         return (
