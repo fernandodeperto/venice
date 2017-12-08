@@ -253,6 +253,9 @@ class StrategyAPI:
 
                     self.buy_orders[name] = order_status
 
+                    logger.info('buy order confirmed, name={}, buy={}'.format(
+                        name, order_status.avg_price))
+
                 else:  # Sell order
                     if name not in self.buy_orders:
                         raise StrategyAPIError('buy order {} not found'.format(name))
@@ -306,7 +309,7 @@ class StrategyAPI:
 
         self.pending_orders[name] = order_statuses[0]
 
-        logger.info('new {} order {}: {}'.format(direction, name, self.pending_orders[name]))
+        logger.debug('new {} order {}: {}'.format(direction, name, self.pending_orders[name]))
 
         return self.pending_orders[name]
 
