@@ -261,7 +261,7 @@ class StrategyAPI:
 
                     logger.info(
                         'trade confirmed, name={}, buy={}, sell={}, profit={},'
-                        'balance={}'.format(
+                        ' balance={}'.format(
                             name, self.buy_orders[name].avg_price, order_status.avg_price,
                             order_status.cost - self.buy_orders[name].cost, self._balance))
 
