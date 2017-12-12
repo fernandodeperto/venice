@@ -1,4 +1,3 @@
-from decimal import Decimal
 from logging import getLogger
 
 from .strategy import Strategy
@@ -6,7 +5,7 @@ from .indicator import ema
 
 
 class EMAStrategy(Strategy):
-    def __init__(self, api, fast_ema, slow_ema, *args, **kwargs):
+    def __init__(self, api, fast_ema, slow_ema, cross, *args, **kwargs):
         logger = getLogger(__name__)
 
         super().__init__(api, *args, **kwargs)
@@ -16,6 +15,8 @@ class EMAStrategy(Strategy):
 
         self.current = None
         self.pending = None
+
+        self.cross = cross
 
         logger.debug('ema strategy started with fast_ema={}, slow_ema={}'.format(
             self.fast_ema, self.slow_ema))
@@ -30,6 +31,7 @@ class EMAStrategy(Strategy):
 
     @staticmethod
     def configure_parser(parser):
+        parser.add_argument('-c', '--cross', action="store_true", help="enable EMA cross")
         parser.add_argument('fast_ema', type=int, help='Fast EMA period')
         parser.add_argument('slow_ema', type=int, help='Slow EMA period')
 
