@@ -12,14 +12,16 @@ class EMAStrategy(Strategy):
 
         self.fast_ema = fast_ema
         self.slow_ema = slow_ema
+        self.previous_ema = None
 
         self.current = None
         self.pending = None
 
         self.cross = cross
 
-        logger.debug('ema strategy started with fast_ema={}, slow_ema={}'.format(
-            self.fast_ema, self.slow_ema))
+        logger.debug(
+            'ema strategy started with fast_ema={}, slow_ema={}, cross={}'.format(
+                self.fast_ema, self.slow_ema, self.cross))
 
     @staticmethod
     def descr_text():
@@ -39,11 +41,12 @@ class EMAStrategy(Strategy):
         logger = getLogger(__name__)
 
         close = [x.close for x in self.api.ohlc(limit=100)]
-        ema_fast = ema(close, self.fast_ema)
-        ema_slow = ema(close, self.slow_ema)
 
-        logger.debug('close={}, ema_fast={}, ema_slow={}'.format(
-            close[-1], ema_fast[-1], ema_slow[-1]))
+        ema_fast = ema(close, self.fast_ema)[-1]
+        ema_slow = ema(close, self.slow_ema)[-1]
+
+        logger.debug('close={}, ema_fast={}, ema_slow={}, previous_ema={}'.format(
+            close[-1], ema_fast, ema_slow, self.previous_ema))
 
         if self.pending:
             order_status = self.api.order_status('EMA')
@@ -58,13 +61,17 @@ class EMAStrategy(Strategy):
                     self.current = None
                     self.pending = None
 
-        if ema_fast[-1] > ema_slow[-1]:
+        if ema_fast >= ema_slow and (not self.cross or (self.previous_ema and
+                                                        self.previous_ema < ema_slow)):
             if not self.current and not self.pending:
                 self.pending = self.api.order_buy('EMA', self.api.MARKET)
 
         else:
             if self.current and not self.pending:
                 self.pending = self.api.order_sell('EMA', self.api.MARKET)
+
+        if self.cross:
+            self.previous_ema = ema_fast
 
         logger.debug('current={}, pending={}'.format(self.current, self.pending))
 
