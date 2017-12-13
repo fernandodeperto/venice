@@ -23,7 +23,7 @@ class EMAStrategy(Strategy):
         self.limit = limit
 
         logger.debug(
-            'ema strategy started with fast_ema={}, slow_ema={}, cross={}, limit={}'.format(
+            'ema strategy started with fast_ema={:.5f}, slow_ema={:.5f}, cross={:.5f}, limit={:.5f}'.format(
                 self.fast_ema, self.slow_ema, self.cross, self.limit))
 
     @staticmethod
@@ -54,7 +54,7 @@ class EMAStrategy(Strategy):
         ema_fast = ema(close, self.fast_ema)[-1]
         ema_slow = ema(close, self.slow_ema)[-1]
 
-        logger.debug('close={}, ema_fast={}, ema_slow={}, previous_ema={}'.format(
+        logger.debug('close={:.5f}, ema_fast={:.5f}, ema_slow={:.5f}, previous_ema={:.5f}'.format(
             close[-1], ema_fast, ema_slow, self.previous_ema))
 
         if self.pending:

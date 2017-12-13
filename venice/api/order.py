@@ -21,12 +21,12 @@ class Order:
         return self.volume * (self.avg_price if self.avg_price else self.price)
 
     def __str__(self):
-        return '{} {} {} @ {}, avg {}'.format(
+        return '{} {:.5f} {} @ {:.5f}, avg {:.5f}'.format(
             self.direction, self.volume, self.pair, self.price, self.avg_price)
 
     def __repr__(self):
         return (
-            'Order(id={}, direction={}, type={}, pair={}, status={}, volume={}, price={},'
-            'price2={}, avg_price={}, remaining={}, pivot={}'.format(
+            'Order(id={}, direction={}, type={}, pair={:.5f}, status={}, volume={:.5f},'
+            'price={:.5f}, price2={:.5f}, avg_price={:.5f}, remaining={:.5f}, pivot={:.5f}'.format(
                 self.id_, self.direction, self.type_, self.pair, self.status, self.volume,
                 self.price, self.price2, self.avg_price, self.remaining, self.pivot))
