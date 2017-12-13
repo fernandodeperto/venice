@@ -72,13 +72,7 @@ def main():
     chosen_strategy = strategy_classes[args.strategy](strategy_api, **vars(args))
 
     # Add a handler for a strategy specific file
-    file_handler = FileHandler('venice-{}.log'.format(args.pair))
-    formatter = Formatter(
-        '%(asctime)s %(levelname)s %(name)s.%(funcName)s:%(lineno)d: %(message)s')
-    file_handler.setFormatter(formatter)
-
-    strategy_logger = getLogger('venice')
-    strategy_logger.addHandler(file_handler)
+    add_log_file(chosen_strategy)
 
     while run:
         start_time = time.time()
@@ -131,3 +125,16 @@ def get_classes(base_module, class_super):
                 classes[module_name] = class_value
 
     return classes
+
+
+def add_log_file(chosen_strategy):
+    log_file = chosen_strategy.log_file
+    file_handler = FileHandler('venice-{}.log'.format(log_file))
+
+    formatter = Formatter(
+        '%(asctime)s %(levelname)s %(name)s.%(funcName)s:%(lineno)d: %(message)s')
+
+    file_handler.setFormatter(formatter)
+
+    strategy_logger = getLogger('venice')
+    strategy_logger.addHandler(file_handler)

@@ -37,9 +37,14 @@ class EMAStrategy(Strategy):
     @staticmethod
     def configure_parser(parser):
         parser.add_argument('-c', '--cross', action='store_true', help='enable EMA cross')
-        parser.add_argument('-l', '--limit', action='store_true', help='enable order limit')
+        parser.add_argument('-l', '--limit', type=int, help='enable order limit')
         parser.add_argument('fast_ema', type=int, help='Fast EMA period')
         parser.add_argument('slow_ema', type=int, help='Slow EMA period')
+
+    @property
+    def log_file(self):
+        return 'ema-{}-{}-{}-{}'.format(
+            self.fast_ema, self.slow_ema, self.cross, self.limit)
 
     def run(self):
         logger = getLogger(__name__)
@@ -70,7 +75,7 @@ class EMAStrategy(Strategy):
                 logger.debug('EMA is higher but cross has not been achieved')
 
             elif (self.limit and self.previous_order and
-                  time() < self.previous_order + self.period * 30):
+                  time() < self.previous_order + self.limit * 30):
                 logger.debug('EMA is higher but order limit has been reached')
 
             else:
@@ -81,7 +86,7 @@ class EMAStrategy(Strategy):
                 logger.debug('EMA is lower but cross has not been achieved')
 
             elif (self.limit and self.previous_order and
-                  time() < self.previous_order + self.period * 30):
+                  time() < self.previous_order + self.limit * 30):
                 logger.debug('EMA is lower but order limit has been reached')
 
             else:

@@ -27,3 +27,7 @@ class Strategy(metaclass=ABCMeta):
     @abstractmethod
     def clean_up(self):
         raise NotImplementedError
+
+    @property
+    def log_file(self):
+        raise NotImplementedError
