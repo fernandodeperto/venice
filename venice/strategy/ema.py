@@ -23,8 +23,8 @@ class EMAStrategy(Strategy):
         self.limit = limit
 
         logger.debug(
-            'ema strategy started with fast_ema={}, slow_ema={}, cross={}'.format(
-                self.fast_ema, self.slow_ema, self.cross))
+            'ema strategy started with fast_ema={}, slow_ema={}, cross={}, limit={}'.format(
+                self.fast_ema, self.slow_ema, self.cross, self.limit))
 
     @staticmethod
     def descr_text():
@@ -77,7 +77,7 @@ class EMAStrategy(Strategy):
                 self.pending = self.api.order_buy('EMA', self.api.MARKET)
 
         elif ema_fast < ema_slow and self.current and not self.pending:
-            if self.cross and self.previous_ema and self.previous_ema >= ema_slow:
+            if self.cross and (not self.previous_ema or self.previous_ema < ema_slow):
                 logger.debug('EMA is lower but cross has not been achieved')
 
             elif (self.limit and self.previous_order and
