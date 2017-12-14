@@ -200,8 +200,8 @@ class StrategyAPI:
         volume_max = self.volume_max()
 
         if volume and volume > volume_max():
-            raise StrategyAPIError('volume {} is higher than available balance {}/{}'.format(
-                volume, self.balance, volume_max))
+            raise StrategyAPIError('volume {:.5f} is higher than available balance '
+                                   '{:.5f}/{:.5f}'.format(volume, self.balance, volume_max))
 
         elif not volume:
             volume = volume_max
@@ -253,7 +253,7 @@ class StrategyAPI:
 
                     self.buy_orders[name] = order_status
 
-                    logger.info('buy order confirmed, name={}, buy={}'.format(
+                    logger.info('buy order confirmed, name={}, buy={:.5f}'.format(
                         name, order_status.avg_price))
 
                 else:  # Sell order
@@ -263,8 +263,8 @@ class StrategyAPI:
                     self._balance += order_status.cost - self.buy_orders[name].cost
 
                     logger.info(
-                        'trade confirmed, name={}, buy={}, sell={}, profit={},'
-                        ' balance={}'.format(
+                        'trade confirmed, name={}, buy={:.5f}, sell={:.5f}, profit={:.5f},'
+                        ' balance={:.5f}'.format(
                             name, self.buy_orders[name].avg_price, order_status.avg_price,
                             order_status.cost - self.buy_orders[name].cost, self._balance))
 
@@ -276,7 +276,7 @@ class StrategyAPI:
                                                   else taker_fee))
                 self._balance -= order_fee
 
-                logger.debug('order fee={}, balance={}'.format(order_fee, self._balance))
+                logger.debug('order fee={:.5f}, balance={:.5f}'.format(order_fee, self._balance))
 
             elif order_status.status == self.CANCELED:
                 raise StrategyAPIError('order {} canceled unexpectedly'.format(name))

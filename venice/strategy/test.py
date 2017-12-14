@@ -12,7 +12,7 @@ class TestStrategy(Strategy):
         self.current = None
         self.pending = None
 
-        logger.debug('test stratgy started')
+        logger.debug('test strategy started')
 
     @staticmethod
     def descr_text():
@@ -25,6 +25,10 @@ class TestStrategy(Strategy):
     @staticmethod
     def configure_parser(parser):
         pass
+
+    @property
+    def log_file(self):
+        return 'test-{}'.format(self.api.pair)
 
     def run(self):
         logger = getLogger(__name__)
