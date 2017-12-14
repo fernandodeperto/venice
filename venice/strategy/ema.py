@@ -13,14 +13,15 @@ class EMAStrategy(Strategy):
 
         self.fast_ema = fast_ema
         self.slow_ema = slow_ema
-        self.previous_ema = None
+
+        self.limit = limit
         self.previous_order = None
+
+        self.cross = cross
+        self.first_cross = False
 
         self.current = None
         self.pending = None
-
-        self.cross = cross
-        self.limit = limit
 
         logger.debug(
             'ema strategy started with fast_ema={:.5f}, slow_ema={:.5f}, cross={:.5f},'
@@ -52,11 +53,14 @@ class EMAStrategy(Strategy):
 
         close = [x.close for x in self.api.ohlc(limit=100)]
 
-        ema_fast = ema(close, self.fast_ema)[-1]
-        ema_slow = ema(close, self.slow_ema)[-1]
+        ema_fast = ema(close, self.fast_ema)
+        ema_slow = ema(close, self.slow_ema)
 
-        logger.debug('close={:.5f}, ema_fast={:.5f}, ema_slow={:.5f}, previous_ema={:.5f}'.format(
-            close[-1], ema_fast, ema_slow, (self.previous_ema if self.previous_ema else 0)))
+        logger.debug('close={:.5f}, ema_fast={:.5f}, ema_slow={:.5f}'.format(
+            close[-1], ema_fast[-1], ema_slow[-1]))
+
+        if self.cross and not self.first_cross and ema_fast[-1] < ema_slow[-1]:
+            self.first_cross = True
 
         if self.pending:
             order_status = self.api.order_status('EMA')
@@ -71,30 +75,26 @@ class EMAStrategy(Strategy):
                     self.current = None
                     self.pending = None
 
-        if ema_fast >= ema_slow and not self.current and not self.pending:
-            if self.cross and (not self.previous_ema or self.previous_ema >= ema_slow):
-                logger.debug('EMA is higher but cross has not been achieved')
-
-            elif (self.limit and self.previous_order and
-                  time() < self.previous_order + self.limit * 30):
+        if ema_fast[-1] >= ema_slow[-1] and not self.current and not self.pending:
+            if (self.limit and self.previous_order and
+                    time() < self.previous_order + self.limit * 30):
                 logger.debug('EMA is higher but order limit has been reached')
+
+            elif self.cross and not self.first_cross:
+                logger.debug('EMA is higher but first cross has not been achieved')
 
             else:
                 self.pending = self.api.order_buy('EMA', self.api.MARKET)
+                self.previous_order = time()
 
-        elif ema_fast < ema_slow and self.current and not self.pending:
-            if self.cross and (not self.previous_ema or self.previous_ema < ema_slow):
-                logger.debug('EMA is lower but cross has not been achieved')
-
-            elif (self.limit and self.previous_order and
-                  time() < self.previous_order + self.limit * 30):
+        elif ema_fast[-1] < ema_slow[-1] and self.current and not self.pending:
+            if (self.limit and self.previous_order and
+                    time() < self.previous_order + self.limit * 30):
                 logger.debug('EMA is lower but order limit has been reached')
 
             else:
                 self.pending = self.api.order_sell('EMA', self.api.MARKET)
-
-        if self.cross:
-            self.previous_ema = ema_fast
+                self.previous_order = time()
 
         logger.debug('current={}, pending={}'.format(self.current, self.pending))
 
