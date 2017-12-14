@@ -45,8 +45,8 @@ class EMAStrategy(Strategy):
 
     @property
     def log_file(self):
-        return 'ema-{}-{}-{}-{}'.format(
-            self.fast_ema, self.slow_ema, self.cross, self.limit)
+        return 'ema-{}-{}-{}-{}-{}'.format(
+            self.api.pair, self.fast_ema, self.slow_ema, self.cross, self.limit)
 
     def run(self):
         logger = getLogger(__name__)
