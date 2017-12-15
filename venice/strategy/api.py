@@ -35,14 +35,10 @@ class StrategyAPI:
         self.comission = Decimal.from_float(comission)
         self.live = live
 
-        # Only one pending order with each order name
         self.pending_orders = {}
-
-        # Sell order needs to match a closed buy order
         self.buy_orders = {}
-
-        # Confirmed sell orers
         self.sell_orders = {}
+        self.cancelled_orders = {}
 
         # Properties
         self._precision = None
@@ -179,10 +175,10 @@ class StrategyAPI:
 
         if self.live:
             self.api.cancel_order(self.pending_orders[name].id_)
+        else:
+            self.pending_orders[name].status = self.CANCELED
 
         logger.debug('cancel order {}: {}'.format(name, self.pending_orders[name]))
-
-        del self.pending_orders[name]
 
     def cancel_all(self):
         """Command to cancel all pending orders."""
@@ -223,6 +219,9 @@ class StrategyAPI:
 
         if name in self.buy_orders or name in self.sell_orders:
             return self.CONFIRMED
+
+        if name in self.cancelled_orders:
+            return self.CANCELED
 
         return self.NOT_FOUND
 
@@ -268,8 +267,8 @@ class StrategyAPI:
                             name, self.buy_orders[name].avg_price, order_status.avg_price,
                             order_status.cost - self.buy_orders[name].cost, self._balance))
 
-                    del self.buy_orders[name]
                     self.sell_orders[name] = order_status
+                    del self.buy_orders[name]
 
                 maker_fee, taker_fee = self.api.fees()
                 order_fee = (order_status.cost * (maker_fee if order_status.type_ == self.LIMIT
@@ -279,13 +278,12 @@ class StrategyAPI:
                 logger.debug('order fee={:.5f}, balance={:.5f}'.format(order_fee, self._balance))
 
             elif order_status.status == self.CANCELED:
-                raise StrategyAPIError('order {} canceled unexpectedly'.format(name))
+                self.cancelled_orders = order_status
 
             logger.debug('order {} {}: {}'.format(
                 name, order_status.status, order_status))
 
         self.pending_orders = pending_orders
-
         self._ohlc = None
         self._ticker = None
 
@@ -335,20 +333,6 @@ class StrategyAPI:
               ((order_status.direction == self.BUY and ticker.last >= order_status.price) or
                (order_status.direction == self.SELL and ticker.last <= order_status.price))):
             order_status.status = self.CONFIRMED
-
-        elif order_status.type_ == self.TRAILING_STOP:
-            if order_status.direction == self.BUY:
-                order_status.pivot = min(order_status.pivot, ticker.last)
-
-                if ticker.last >= order_status.pivot + order_status.price2:
-                    order_status.status = self.CONFIRMED
-            else:
-                order_status.pivot = max(order_status.pivot, ticker.last)
-
-                if ticker.last <= order_status.pivot - order_status.price2:
-                    order_status.status = self.CONFIRMED
-
-        # TODO fix the avg price if order type is not limit
 
         return order_status
 

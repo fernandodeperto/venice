@@ -33,22 +33,20 @@ class MomentumStrategy(Strategy):
     def run(self):
         logger = getLogger(__name__)
 
-        ticker = self.api.ticker
         ohlc = self.api.ohlc(limit=self.length + 1)
-
         close = [x.close for x in ohlc]
         high = [x.high for x in ohlc]
         low = [x.low for x in ohlc]
+
         mom0 = mom(close, self.length)
         mom1 = mom(mom0, 1)
 
         logger.debug('last={:.5f}, mom0={:.5f}, mom1={:.5f}'.format(
-            ticker.last, mom0[-1], mom1[-1]))
+            close[-1], mom0[-1], mom1[-1]))
 
         if self.pending:
             order_status = self.api.order_status('Momentum')
 
-            # Buy order
             if order_status == self.api.CONFIRMED:
                 if self.pending.direction == self.api.BUY:
                     self.current = self.pending
@@ -58,20 +56,21 @@ class MomentumStrategy(Strategy):
                     self.current = None
                     self.pending = None
 
+            elif order_status == self.api.CANCELED:
+                del self.pending
+
         if mom0[-1] > EPSILON and mom1[-1] > EPSILON:
             if self.pending and self.pending.direction == self.api.SELL:
                     self.api.cancel('Momentum')
-                    self.pending = None
 
-            if not self.current and not self.pending:
+            elif not self.current and not self.pending:
                 self.pending = self.api.order_buy('Momentum', self.api.STOP, price=high[-1])
 
         elif mom0[-1] < -EPSILON and mom1[-1] < -EPSILON:
             if self.pending and self.pending.direction == self.api.BUY:
                     self.api.cancel('Momentum')
-                    self.pending = None
 
-            if self.current and not self.pending:
+            elif self.current and not self.pending:
                 self.pending = self.api.order_sell('Momentum', self.api.STOP, price=low[-1])
 
         elif self.pending:
