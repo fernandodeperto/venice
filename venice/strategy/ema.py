@@ -6,7 +6,7 @@ from .indicator import ema
 
 
 class EMAStrategy(Strategy):
-    def __init__(self, api, fast_ema, slow_ema, cross, limit, *args, **kwargs):
+    def __init__(self, api, fast_ema, slow_ema, cross, *args, **kwargs):
         logger = getLogger(__name__)
 
         super().__init__(api, *args, **kwargs)
@@ -40,8 +40,8 @@ class EMAStrategy(Strategy):
 
     @property
     def log_file(self):
-        return 'ema-{}-{}-{}-{}-{}'.format(
-            self.api.pair, self.fast_ema, self.slow_ema, self.cross, self.limit)
+        return 'ema-{}-{}-{}-{}'.format(
+            self.api.pair, self.fast_ema, self.slow_ema, self.cross)
 
     def run(self):
         logger = getLogger(__name__)
