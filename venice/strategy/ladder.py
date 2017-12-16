@@ -42,6 +42,11 @@ class LadderStrategy(Strategy):
         parser.add_argument('steps', type=int, help='Number of order steps')
         parser.add_argument('stop', type=float, help='Trailing stop value for orders')
 
+    @property
+    def log_file(self):
+        return 'ladder-{}-{}-{}'.format(
+            self.api.pair, self.steps, self.stop)
+
     def run(self):
         logger = getLogger(__name__)
 

@@ -30,6 +30,11 @@ class MomentumStrategy(Strategy):
     def configure_parser(parser):
         parser.add_argument('length', type=int, help='Momentum length')
 
+    @property
+    def log_file(self):
+        return 'momentum-{}-{}'.format(
+            self.api.pair, self.length)
+
     def run(self):
         logger = getLogger(__name__)
 
