@@ -62,7 +62,7 @@ class MomentumStrategy(Strategy):
                     self.pending = None
 
             elif order_status == self.api.CANCELED:
-                del self.pending
+                self.pending = None
 
         if mom0[-1] > EPSILON and mom1[-1] > EPSILON:
             if self.pending and self.pending.direction == self.api.SELL:
@@ -80,7 +80,6 @@ class MomentumStrategy(Strategy):
 
         elif self.pending:
             self.api.cancel('Momentum')
-            self.pending = None
 
         logger.debug('current={}, pending={}'.format(
             self.current, self.pending))
