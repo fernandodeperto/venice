@@ -119,11 +119,14 @@ class StrategyAPI:
 
     @property
     def balance(self):
-        return self._balance, self._balance - sum(
-            [x.cost for x in list(self.pending_orders.values()) + list(self.buy_orders.values())])
+        used_balance = sum([x.cost for x in list(self.pending_orders.values()) +
+                            list(self.buy_orders.values())])
+        return self._balance - used_balance, self._balance
 
-    def volume_max(self):
-        return self.balance[1] / self.ticker.last
+    def volume_max(self, type_):
+        maker_fee, taker_fee = self.api.fees()
+        return (self.balance[0] * (1 - (maker_fee if type_ == self.LIMIT else taker_fee)) /
+                self.ticker.last)
 
     # Trading statistics
 
@@ -192,7 +195,7 @@ class StrategyAPI:
         if name in self.sell_orders:
             del self.sell_orders[name]
 
-        volume_max = self.volume_max()
+        volume_max = self.volume_max(type_)
 
         if volume and volume > volume_max:
             raise StrategyAPIError('volume {:.5f} is higher than maximum {:.5f} '.format(
@@ -270,8 +273,8 @@ class StrategyAPI:
                     del self.buy_orders[name]
 
                 maker_fee, taker_fee = self.api.fees()
-                order_fee = (order_status.cost * (maker_fee if order_status.type_ == self.LIMIT
-                                                  else taker_fee))
+                order_fee = (order_status.cost *
+                             (maker_fee if order_status.type_ == self.LIMIT else taker_fee))
                 self._balance -= order_fee
 
                 logger.debug('order fee={:.5f}, balance={:.5f}'.format(order_fee, self._balance))
@@ -322,21 +325,24 @@ class StrategyAPI:
 
         if order_status.type_ == self.MARKET:
             order_status.status = self.CONFIRMED
+            order_status.executed_volume = order_status.volume
 
         elif (order_status.type_ == self.LIMIT and
               ((order_status.direction == self.BUY and ticker.last <= order_status.price) or
                (order_status.direction == self.SELL and ticker.last >= order_status.price))):
             order_status.status = self.CONFIRMED
+            order_status.executed_volume = order_status.volume
 
         elif (order_status.type_ == self.STOP and
               ((order_status.direction == self.BUY and ticker.last >= order_status.price) or
                (order_status.direction == self.SELL and ticker.last <= order_status.price))):
             order_status.status = self.CONFIRMED
+            order_status.executed_volume = order_status.volume
 
         return order_status
 
     def _format_order(self, direction, type_, pair, volume, price=0, price2=0, avg_price=None,
                       remaining=None, pivot=None):
         return [Order(
-            -1, direction, type_, pair, self.PENDING, volume, price=price, price2=price2,
+            -1, direction, type_, pair, self.PENDING, volume, 0, price=price, price2=price2,
             avg_price=avg_price, remaining=remaining, pivot=pivot)]

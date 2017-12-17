@@ -446,6 +446,7 @@ class BitfinexAPI(ExchangeAPI):
             BitfinexAPI.PAIR_KEYS_REVERSE[result['symbol']],
             status,
             Decimal(result['original_amount']),
+            executed_volume=Decimal(result['executed_amount']),
             price=Decimal(result['price']),
             avg_price=Decimal(result['avg_execution_price']),
             remaining=Decimal(result['remaining_amount']))
