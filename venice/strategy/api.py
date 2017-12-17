@@ -36,7 +36,7 @@ class StrategyAPI:
         self.pending_orders = {}
         self.buy_orders = {}
         self.sell_orders = {}
-        self.cancelled_orders = {}
+        self.canceled_orders = {}
 
         # Properties
         self._precision = None
@@ -173,7 +173,7 @@ class StrategyAPI:
         if name not in self.pending_orders:
             raise StrategyAPIError('pending order {} not found'.format(name))
 
-        self.api.cancel_order(self.pending_orders[name].id_)
+        self._cancel_order(self.pending_orders[name])
 
         logger.debug('cancel order {}: {}'.format(name, self.pending_orders[name]))
 
@@ -217,7 +217,7 @@ class StrategyAPI:
         if name in self.buy_orders or name in self.sell_orders:
             return self.CONFIRMED
 
-        if name in self.cancelled_orders:
+        if name in self.canceled_orders:
             return self.CANCELED
 
         return self.NOT_FOUND
@@ -229,7 +229,7 @@ class StrategyAPI:
 
         for name in self.pending_orders:
             try:
-                order_status = self.api.order_status(self.pending_orders[name].id_)
+                order_status = self._update_order(self.pending_orders[name])
 
             except Exception:
                 pending_orders[name] = self.pending_orders[name]
@@ -271,7 +271,7 @@ class StrategyAPI:
                 logger.debug('order fee={:.5f}, balance={:.5f}'.format(order_fee, self._balance))
 
             elif order_status.status == self.CANCELED:
-                self.cancelled_orders = order_status
+                self.canceled_orders[name] = order_status
 
             logger.debug('order {} {}: {}'.format(
                 name, order_status.status, order_status))
@@ -287,13 +287,15 @@ class StrategyAPI:
         for name in list(self.buy_orders.keys()):
             self.order_sell(name, self.MARKET)
 
+    # Internal methods
+
     def _order(self, name, direction, type_, volume, price=0, price2=0):
         logger = getLogger(__name__)
 
         if name in self.pending_orders:
             self.cancel(name)
 
-        order_statuses = self.api.add_order(
+        order_statuses = self._add_order(
             self.pair, direction, type_, volume=volume, price=price, price2=price2)
 
         if len(order_statuses) > 1:
@@ -304,3 +306,14 @@ class StrategyAPI:
         logger.debug('new {} order {}: {}'.format(direction, name, self.pending_orders[name]))
 
         return self.pending_orders[name]
+
+    # Parent internal methods
+
+    def _update_order(self, order_status):
+        raise NotImplementedError
+
+    def _cancel_order(self, order_status):
+        raise NotImplementedError
+
+    def _add_order(self, pair, direction, type_, volume=0, price=0, price2=0):
+        raise NotImplementedError

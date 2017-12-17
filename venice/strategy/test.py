@@ -12,6 +12,8 @@ class TestStrategy(Strategy):
         self.current = None
         self.pending = None
 
+        self.step = 0
+
         logger.debug('test strategy started')
 
     @staticmethod
@@ -50,11 +52,22 @@ class TestStrategy(Strategy):
                     self.current = None
                     self.pending = None
 
+            elif order_status == self.api.CANCELED:
+                self.pending = None
+
         if not self.pending and not self.current:
-            self.pending = self.api.order_buy('Test', self.api.MARKET)
+            if not self.step:
+                self.pending = self.api.order_buy('Test', self.api.LIMIT, price=ticker.last / 2)
+            else:
+                self.pending = self.api.order_buy('Test', self.api.MARKET)
 
         elif not self.pending and self.current:
             self.pending = self.api.order_sell('Test', self.api.MARKET)
+            self.step = 0
+
+        elif self.pending:
+            self.api.cancel('Test')
+            self.step = 1
 
         logger.debug('current={}, pending={}'.format(
             self.current, self.pending))
