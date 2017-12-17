@@ -65,8 +65,12 @@ def main():
     chosen_exchange = exchange_classes[args.exchange]()
 
     # Initialize the strategy API
-    strategy_api = strategy.StrategyAPI(
-        chosen_exchange, args.pair, args.period, args.capital, live=args.live)
+    if args.live:
+        strategy_api = strategy.StrategyAPI(
+            chosen_exchange, args.pair, args.period, args.capital)
+    else:
+        strategy_api = strategy.SimulatedStrategyAPI(
+            chosen_exchange, args.pair, args.period, args.capital)
 
     # Initialize the strategy
     chosen_strategy = strategy_classes[args.strategy](strategy_api, **vars(args))

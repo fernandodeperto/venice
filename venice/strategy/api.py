@@ -3,7 +3,6 @@ from logging import getLogger
 
 from ..util import decimal_places
 from ..api.api import ExchangeAPI
-from ..api.order import Order
 
 
 class StrategyAPIError(Exception):
@@ -27,13 +26,12 @@ class StrategyAPI:
 
     OHLC_DEFAULT_LIMIT = 100
 
-    def __init__(self, api, pair, period, capital, live=True):
+    def __init__(self, api, pair, period, capital):
         self.api = api
 
         self.pair = pair
         self.period = period
         self.capital = Decimal.from_float(capital)
-        self.live = live
 
         self.pending_orders = {}
         self.buy_orders = {}
@@ -175,10 +173,7 @@ class StrategyAPI:
         if name not in self.pending_orders:
             raise StrategyAPIError('pending order {} not found'.format(name))
 
-        if self.live:
-            self.api.cancel_order(self.pending_orders[name].id_)
-        else:
-            self.pending_orders[name].status = self.CANCELED
+        self.api.cancel_order(self.pending_orders[name].id_)
 
         logger.debug('cancel order {}: {}'.format(name, self.pending_orders[name]))
 
@@ -233,16 +228,12 @@ class StrategyAPI:
         pending_orders = {}
 
         for name in self.pending_orders:
-            if self.live:
-                try:
-                    order_status = self.api.order_status(self.pending_orders[name].id_)
+            try:
+                order_status = self.api.order_status(self.pending_orders[name].id_)
 
-                except Exception:
-                    pending_orders[name] = self.pending_orders[name]
-                    raise
-
-            else:
-                order_status = self._order_status(self.pending_orders[name])
+            except Exception:
+                pending_orders[name] = self.pending_orders[name]
+                raise
 
             if order_status.status == self.PENDING:
                 pending_orders[name] = order_status
@@ -302,14 +293,8 @@ class StrategyAPI:
         if name in self.pending_orders:
             self.cancel(name)
 
-        if self.live:
-            order_statuses = self.api.add_order(
-                self.pair, direction, type_, volume=volume, price=price, price2=price2)
-
-        else:
-            order_statuses = self._format_order(
-                direction, type_, self.pair, volume, price=price, price2=price2,
-                avg_price=(price if type_ == self.LIMIT else self.ticker.last))
+        order_statuses = self.api.add_order(
+            self.pair, direction, type_, volume=volume, price=price, price2=price2)
 
         if len(order_statuses) > 1:
             raise StrategyAPIError('orders with multiple order statuses not supported')
@@ -319,33 +304,3 @@ class StrategyAPI:
         logger.debug('new {} order {}: {}'.format(direction, name, self.pending_orders[name]))
 
         return self.pending_orders[name]
-
-    def _order_status(self, order_status):
-        ticker = self.ticker
-
-        if order_status.status == self.CANCELED:
-            return order_status
-
-        if order_status.type_ == self.MARKET:
-            order_status.status = self.CONFIRMED
-            order_status.executed_volume = order_status.volume
-
-        elif (order_status.type_ == self.LIMIT and
-              ((order_status.direction == self.BUY and ticker.last <= order_status.price) or
-               (order_status.direction == self.SELL and ticker.last >= order_status.price))):
-            order_status.status = self.CONFIRMED
-            order_status.executed_volume = order_status.volume
-
-        elif (order_status.type_ == self.STOP and
-              ((order_status.direction == self.BUY and ticker.last >= order_status.price) or
-               (order_status.direction == self.SELL and ticker.last <= order_status.price))):
-            order_status.status = self.CONFIRMED
-            order_status.executed_volume = order_status.volume
-
-        return order_status
-
-    def _format_order(self, direction, type_, pair, volume, price=0, price2=0, avg_price=None,
-                      remaining=None, pivot=None):
-        return [Order(
-            -1, direction, type_, pair, self.PENDING, volume, 0, price=price, price2=price2,
-            avg_price=avg_price, remaining=remaining, pivot=pivot)]
