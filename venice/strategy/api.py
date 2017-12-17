@@ -123,7 +123,7 @@ class StrategyAPI:
             [x.cost for x in list(self.pending_orders.values()) + list(self.buy_orders.values())])
 
     def volume_max(self):
-        return self.balance[1] * self.ticker.last
+        return self.balance[1] / self.ticker.last
 
     # Trading statistics
 
