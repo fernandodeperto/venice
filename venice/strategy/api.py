@@ -23,16 +23,16 @@ class StrategyAPI:
     NOT_FOUND = ''
     PENDING = ExchangeAPI.PENDING
     CONFIRMED = ExchangeAPI.CONFIRMED
+    CANCELED = ExchangeAPI.CANCELED
 
     OHLC_DEFAULT_LIMIT = 100
 
-    def __init__(self, api, pair, period, capital, comission=0, live=True):
+    def __init__(self, api, pair, period, capital, live=True):
         self.api = api
 
         self.pair = pair
         self.period = period
         self.capital = Decimal.from_float(capital)
-        self.comission = Decimal.from_float(comission)
         self.live = live
 
         self.pending_orders = {}
@@ -119,12 +119,11 @@ class StrategyAPI:
 
     @property
     def balance(self):
-        return self._balance - sum(
+        return self._balance, self._balance - sum(
             [x.cost for x in list(self.pending_orders.values()) + list(self.buy_orders.values())])
 
     def volume_max(self):
-        ticker = self.ticker
-        return self.balance * (1 - self.comission / 100) / ticker.last
+        return self.balance[1] * self.ticker.last
 
     # Trading statistics
 
@@ -195,9 +194,9 @@ class StrategyAPI:
 
         volume_max = self.volume_max()
 
-        if volume and volume > volume_max():
-            raise StrategyAPIError('volume {:.5f} is higher than available balance '
-                                   '{:.5f}/{:.5f}'.format(volume, self.balance, volume_max))
+        if volume and volume > volume_max:
+            raise StrategyAPIError('volume {:.5f} is higher than maximum {:.5f} '.format(
+                volume, volume_max))
 
         elif not volume:
             volume = volume_max
@@ -307,7 +306,7 @@ class StrategyAPI:
         else:
             order_statuses = self._format_order(
                 direction, type_, self.pair, volume, price=price, price2=price2,
-                avg_price=self.ticker.last)
+                avg_price=(price if type_ == self.LIMIT else self.ticker.last))
 
         if len(order_statuses) > 1:
             raise StrategyAPIError('orders with multiple order statuses not supported')
@@ -325,8 +324,8 @@ class StrategyAPI:
             order_status.status = self.CONFIRMED
 
         elif (order_status.type_ == self.LIMIT and
-              ((order_status.direction == self.buy and ticker.last <= order_status.price) or
-               (order_status.direction == self.sell and ticker.last >= order_status.price))):
+              ((order_status.direction == self.BUY and ticker.last <= order_status.price) or
+               (order_status.direction == self.SELL and ticker.last >= order_status.price))):
             order_status.status = self.CONFIRMED
 
         elif (order_status.type_ == self.STOP and
