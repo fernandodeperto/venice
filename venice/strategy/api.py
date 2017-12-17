@@ -323,6 +323,9 @@ class StrategyAPI:
     def _order_status(self, order_status):
         ticker = self.ticker
 
+        if order_status.status == self.CANCELED:
+            return order_status
+
         if order_status.type_ == self.MARKET:
             order_status.status = self.CONFIRMED
             order_status.executed_volume = order_status.volume
