@@ -25,7 +25,7 @@ class EMAStrategy(Strategy):
         self.pending = None
 
         logger.debug(
-            'ema strategy started with fast_ema={:.5f}, slow_ema={:.5f}, first_cross={:.5f}, '
+            'ema strategy started with fast_ema={:.5f}, slow_ema={:.5f}, cross={:.5f}, '
             'limit={}'.format(self.fast_ema, self.slow_ema, self.cross, self.limit))
 
     @staticmethod
