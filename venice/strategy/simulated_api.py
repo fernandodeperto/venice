@@ -14,21 +14,22 @@ class SimulatedStrategyAPI(StrategyAPI):
     def _update_order(self, order_status):
         ticker = self.ticker
 
-        if order_status.type_ == self.MARKET:
-            order_status.status = self.CONFIRMED
-            order_status.executed_volume = order_status.volume
+        if order_status.status == self.PENDING:
+            if order_status.type_ == self.MARKET:
+                order_status.status = self.CONFIRMED
+                order_status.executed_volume = order_status.volume
 
-        elif (order_status.type_ == self.LIMIT and
-              ((order_status.direction == self.BUY and ticker.last <= order_status.price) or
-               (order_status.direction == self.SELL and ticker.last >= order_status.price))):
-            order_status.status = self.CONFIRMED
-            order_status.executed_volume = order_status.volume
+            elif (order_status.type_ == self.LIMIT and
+                  ((order_status.direction == self.BUY and ticker.last <= order_status.price) or
+                   (order_status.direction == self.SELL and ticker.last >= order_status.price))):
+                order_status.status = self.CONFIRMED
+                order_status.executed_volume = order_status.volume
 
-        elif (order_status.type_ == self.STOP and
-              ((order_status.direction == self.BUY and ticker.last >= order_status.price) or
-               (order_status.direction == self.SELL and ticker.last <= order_status.price))):
-            order_status.status = self.CONFIRMED
-            order_status.executed_volume = order_status.volume
+            elif (order_status.type_ == self.STOP and
+                  ((order_status.direction == self.BUY and ticker.last >= order_status.price) or
+                   (order_status.direction == self.SELL and ticker.last <= order_status.price))):
+                order_status.status = self.CONFIRMED
+                order_status.executed_volume = order_status.volume
 
         return order_status
 
