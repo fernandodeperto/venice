@@ -1,3 +1,4 @@
+from collections import namedtuple
 from decimal import Decimal
 from logging import getLogger
 
@@ -7,6 +8,9 @@ from ..api.api import ExchangeAPI
 
 class StrategyAPIError(Exception):
     pass
+
+
+StrategyOrder = namedtuple('StrategyOrder', 'buy_order, sell_order')
 
 
 class StrategyAPI:
@@ -235,6 +239,7 @@ class StrategyAPI:
                 pending_orders[name] = self.pending_orders[name]
                 raise
 
+            p
             if order_status.status == self.PENDING:
                 pending_orders[name] = order_status
 

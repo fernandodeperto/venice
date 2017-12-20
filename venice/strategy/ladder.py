@@ -1,5 +1,3 @@
-import re
-
 from decimal import Decimal
 from logging import getLogger
 from collections import namedtuple
