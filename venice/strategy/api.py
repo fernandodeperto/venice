@@ -23,7 +23,7 @@ class StrategyAPI:
     BUY = ExchangeAPI.BUY
     SELL = ExchangeAPI.SELL
 
-    NOT_FOUND = ''
+    NOT_FOUND = None
     PENDING = ExchangeAPI.PENDING
     CONFIRMED = ExchangeAPI.CONFIRMED
     CANCELED = ExchangeAPI.CANCELED
@@ -37,10 +37,7 @@ class StrategyAPI:
         self.period = period
         self.capital = Decimal.from_float(capital)
 
-        self.pending_orders = {}
-        self.buy_orders = {}
-        self.sell_orders = {}
-        self.canceled_orders = {}
+        self.orders = {}
 
         # Properties
         self._precision = None
@@ -119,12 +116,14 @@ class StrategyAPI:
 
     # Comission and balance
 
+    # TODO
     @property
     def balance(self):
         used_balance = sum([x.cost for x in list(self.pending_orders.values()) +
                             list(self.buy_orders.values())])
         return self._balance - used_balance, self._balance
 
+    # TODO
     def volume_max(self, type_):
         maker_fee, taker_fee = self.api.fees()
         return (self.balance[0] * (1 - (maker_fee if type_ == self.LIMIT else taker_fee)) /
@@ -170,6 +169,7 @@ class StrategyAPI:
 
     # Orders
 
+    # TODO
     def cancel(self, name):
         """Command to cancel/deactivate pending orders by referencing their names."""
         logger = getLogger(__name__)
@@ -181,11 +181,13 @@ class StrategyAPI:
 
         logger.debug('cancel order {}: {}'.format(name, self.pending_orders[name]))
 
+    # TODO
     def cancel_all(self):
         """Command to cancel all pending orders."""
         for name in list(self.pending_orders.keys()):
             self.cancel(name)
 
+    # TODO
     def order_buy(self, name, type_, volume=0, price=0, price2=0):
         """Place a buy order."""
         if name in self.buy_orders:
@@ -205,6 +207,7 @@ class StrategyAPI:
 
         return self._order(name, 'buy', type_, volume, price=price, price2=price2)
 
+    # TODO
     def order_sell(self, name, type_, price=0, price2=0):
         """Command to place a sell order."""
         if name not in self.buy_orders:
@@ -214,6 +217,7 @@ class StrategyAPI:
 
         return self._order(name, 'sell', type_, volume, price=price, price2=price2)
 
+    # TODO
     def order_status(self, name):
         if name in self.pending_orders:
             return self.PENDING
@@ -226,6 +230,7 @@ class StrategyAPI:
 
         return self.NOT_FOUND
 
+    # TODO
     def update(self):
         logger = getLogger(__name__)
 
@@ -239,7 +244,6 @@ class StrategyAPI:
                 pending_orders[name] = self.pending_orders[name]
                 raise
 
-            p
             if order_status.status == self.PENDING:
                 pending_orders[name] = order_status
 
@@ -285,6 +289,7 @@ class StrategyAPI:
         self._ohlc = None
         self._ticker = None
 
+    # TODO
     def clean_up(self):
         for name in list(self.pending_orders.keys()):
             self.cancel(name)
@@ -294,6 +299,7 @@ class StrategyAPI:
 
     # Internal methods
 
+    # TODO
     def _order(self, name, direction, type_, volume, price=0, price2=0):
         logger = getLogger(__name__)
 
