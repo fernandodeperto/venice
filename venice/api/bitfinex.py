@@ -5,7 +5,7 @@ from venice.connection.bitfinex import BitfinexConnection
 
 from .api import ExchangeAPI
 from .ohlc import OHLC
-from .order import Order
+from .order_status import OrderStatus
 from .ticker import Ticker
 from .balance import Balance
 from .pair import Pair
@@ -439,7 +439,7 @@ class BitfinexAPI(ExchangeAPI):
             ExchangeAPI.CANCELED if result['is_cancelled'] else
             ExchangeAPI.CONFIRMED)
 
-        return Order(
+        return OrderStatus(
             result['id'],
             result['side'],
             BitfinexAPI.TYPE_KEYS_REVERSE[result['type']],
@@ -453,7 +453,7 @@ class BitfinexAPI(ExchangeAPI):
 
     @staticmethod
     def _format_oco_order(result):
-        return Order(
+        return OrderStatus(
             result['oco_order'],
             result['side'],
             ExchangeAPI.STOP,

@@ -1,5 +1,5 @@
 from .api import StrategyAPI
-from ..api.order import Order
+from ..api.order_status import OrderStatus
 
 
 class SimulatedStrategyAPI(StrategyAPI):
@@ -35,6 +35,6 @@ class SimulatedStrategyAPI(StrategyAPI):
 
     def _format_order(self, direction, type_, pair, volume, price=0, price2=0, avg_price=None,
                       remaining=None, pivot=None):
-        return [Order(
+        return [OrderStatus(
             -1, direction, type_, pair, self.PENDING, volume, 0, price=price, price2=price2,
             avg_price=avg_price, remaining=remaining, pivot=pivot)]

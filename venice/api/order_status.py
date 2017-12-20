@@ -1,4 +1,4 @@
-class Order:
+class OrderStatus:
     def __init__(self, id_, direction, type_, pair, status, volume, executed_volume, price=0,
                  price2=0, avg_price=None, remaining=None, pivot=None):
         self.id_ = id_
@@ -25,7 +25,7 @@ class Order:
 
     def __repr__(self):
         return (
-            'Order(id={}, direction={}, type={}, pair={:.5f}, status={}, volume={:.5f}, '
+            'OrderStatus(id={}, direction={}, type={}, pair={:.5f}, status={}, volume={:.5f}, '
             'executed_volume={:.5f}, price={:.5f}, price2={:.5f}, avg_price={:.5f}, '
             'remaining={:.5f}, pivot={:.5f}'.format(
                 self.id_, self.direction, self.type_, self.pair, self.status, self.volume,
