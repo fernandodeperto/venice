@@ -102,20 +102,21 @@ class StrategyAPI:
 
     # Comission and balance
 
-    # TODO
     @property
     def balance(self):
         used_balance = 0
 
-        for name, orders in self.orders:
-            # caso 1 : order de compra pendente
-            # caso 2 : order de compra confirmada e ordem de venda pendente
+        for name in self.orders:
+            if (self.BUY in self.orders[name] and (
+                self.orders[name][self.BUY].status == self.PENDING or
+                (self.orders[name][self.BUY].status == self.CONFIRMED and
+                 self.SELL in self.orders[name] and
+                 self.orders[name][self.SELL].status == self.PENDING))):
 
-        # used_balance = sum([x.cost for x in list(self.pending_orders.values()) +
-        #                     list(self.buy_orders.values())])
-        # return self._balance - used_balance, self._balance
+                used_balance += self.orders[name][self.BUY].volume
 
-    # TODO
+        return self._balance - used_balance, self._balance
+
     def volume_max(self, type_):
         maker_fee, taker_fee = self.api.fees()
         return (self.balance[0] * (1 - (maker_fee if type_ == self.LIMIT else taker_fee)) /
@@ -168,11 +169,13 @@ class StrategyAPI:
         if name in self.orders:
             if (self.BUY in self.orders[name] and
                     self.orders[name][self.BUY].status == self.PENDING):
-                self._cancel(self.orders[name][self.BUY])
+                self._cancel_order(self.orders[name][self.BUY])
+                logger.debug('cancel order {}: {}'.format(name, self.orders[name][self.BUY]))
 
             elif (self.SELL in self.orders[name] and
                     self.orders[name][self.SELL].status == self.PENDING):
-                self._cancel(self.orers[name][self.SELL])
+                self._cancel_order(self.orers[name][self.SELL])
+                logger.debug('cancel order {}: {}'.format(name, self.orders[name][self.SELL]))
 
             else:
                 raise StrategyAPIError('pending order {} not found'.format(name))
@@ -180,7 +183,6 @@ class StrategyAPI:
         else:
             StrategyAPIError('order {} not found'.format(name))
 
-        logger.debug('cancel order {}: {}'.format(name, self.pending_orders[name]))
 
     def cancel_all(self):
         """Command to cancel all pending orders."""
@@ -193,10 +195,17 @@ class StrategyAPI:
 
     def order_buy(self, name, type_, volume=0, price=0, price2=0):
         """Place a buy order."""
-        if (name in self.orders and self.BUY in self.orders[name] and
-                self.orders[name][self.BUY].status != self.CANCELED):
-            raise StrategyAPIError('buy order {} already exists: {}'.format(
-                name, self.orders[name][self.BUY]))
+        if name in self.orders:
+            if (self.BUY in self.orders[name] and
+                    self.orders[name][self.BUY].status == self.CONFIRMED and
+                    self.SELL in self.orders[name] and
+                    self.orders[name][self.SELL].status == self.CONFIRMED):
+                del self.orders[name]
+
+            elif (self.BUY in self.orders[name] and
+                  self.orders[name][self.BUY].status != self.CANCELED):
+                raise StrategyAPIError('buy order {} already exists: {}'.format(
+                    name, self.orders[name][self.BUY]))
 
         volume_max = self.volume_max(type_)
 
@@ -228,13 +237,12 @@ class StrategyAPI:
         if name in self.orders and direction in self.orders[name]:
             return self.orders[name][direction]
 
-        return self.NOT_FOUND
-
     def update(self):
         logger = getLogger(__name__)
 
-        for name, orders in self.orders:
-            for direction, order_status in orders:
+        for order_name in self.orders:
+            for order_direction in self.orders[order_name]:
+                order_status = self.orders[order_name][order_direction]
                 if order_status.status == self.PENDING:
                     self._update_order(order_status)
 
@@ -249,23 +257,23 @@ class StrategyAPI:
 
                         if order_status.direction == self.BUY:
                             logger.info('buy order confirmed, name={}, buy={:.5f}'.format(
-                                name, order_status.avg_price))
+                                order_name, order_status.avg_price))
 
                         else:  # Sell order
-                            buy_order = orders[self.BUY]
+                            buy_order = self.orders[order_name][self.BUY]
 
                             self._balance += order_status.cost - buy_order.cost
 
                             logger.info(
                                 'trade confirmed, name={}, buy={:.5f}, sell={:.5f}, profit={:.5f},'
                                 ' balance={:.5f}'.format(
-                                    name, buy_order.avg_price, order_status.avg_price,
+                                    order_name, buy_order.avg_price, order_status.avg_price,
                                     order_status.cost - buy_order.cost, self._balance))
 
-                    self.orders[name][direction] = order_status
+                    self.orders[order_name][order_direction] = order_status
 
                 logger.debug('order {}: {}'.format(
-                    name, order_status))
+                    order_name, order_status))
 
         self._ohlc = None
         self._ticker = None
@@ -288,18 +296,24 @@ class StrategyAPI:
         if len(order_statuses) > 1:
             raise StrategyAPIError('orders with multiple order statuses not supported')
 
+        if name not in self.orders:
+            self.orders[name] = {}
+
         self.orders[name][direction] = order_statuses[0]
 
         logger.debug('new {} order {}: {}'.format(direction, name, order_statuses[0]))
 
         return order_statuses[0]
 
-    def _filter_orders(self, direction=None, status=None):
+    def _filter_orders(self, name=None, direction=None, status=None):
         filtered_orders = []
 
-        for name, orders in self.orders:
-            for direction, order_status in orders:
-                if ((not direction or order_status.direction == direction) and
+        for order_name in self.orders:
+            for order_direction in self.orders[order_name]:
+                order_status = self.orders[order_name][order_direction]
+
+                if ((not name or order_name == name) and
+                        (not direction or order_status.direction == direction) and
                         (not status or order_status.status == status)):
                     filtered_orders.append(order_status)
 

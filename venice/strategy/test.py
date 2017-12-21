@@ -40,10 +40,11 @@ class TestStrategy(Strategy):
         logger.debug('last={:.5f}'.format(ticker.last))
 
         if self.pending:
-            order_status = self.api.order_status('Test')
+            self.pending = self.api.order_status('Test', self.pending.direction)
+            logger.debug('status={}'.format(self.pending))
 
             # Buy order
-            if order_status == self.api.CONFIRMED:
+            if self.pending.status == self.api.CONFIRMED:
                 if self.pending.direction == self.api.BUY:
                     self.current = self.pending
                     self.pending = None
@@ -52,7 +53,7 @@ class TestStrategy(Strategy):
                     self.current = None
                     self.pending = None
 
-            elif order_status == self.api.CANCELED:
+            elif self.pending.status == self.api.CANCELED:
                 self.pending = None
 
         if not self.pending and not self.current:

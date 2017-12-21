@@ -33,8 +33,8 @@ class SimulatedStrategyAPI(StrategyAPI):
 
         return order_status
 
-    def _format_order(self, direction, type_, pair, volume, price=0, price2=0, avg_price=None,
-                      remaining=None, pivot=None):
+    def _format_order(self, direction, type_, pair, volume, price=0, price2=0, avg_price=-1,
+                      remaining=-1, pivot=-1):
         return [OrderStatus(
             -1, direction, type_, pair, self.PENDING, volume, 0, price=price, price2=price2,
             avg_price=avg_price, remaining=remaining, pivot=pivot)]
