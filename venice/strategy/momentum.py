@@ -50,9 +50,9 @@ class MomentumStrategy(Strategy):
             close[-1], mom0[-1], mom1[-1]))
 
         if self.pending:
-            order_status = self.api.order_status('Momentum')
+            self.pending = self.api.order_status('Momentum', self.pending.direction)
 
-            if order_status == self.api.CONFIRMED:
+            if self.pending.status == self.api.CONFIRMED:
                 if self.pending.direction == self.api.BUY:
                     self.current = self.pending
                     self.pending = None
@@ -61,7 +61,7 @@ class MomentumStrategy(Strategy):
                     self.current = None
                     self.pending = None
 
-            elif order_status == self.api.CANCELED:
+            elif self.pending.status == self.api.CANCELED:
                 self.pending = None
 
         if mom0[-1] > EPSILON and mom1[-1] > EPSILON:

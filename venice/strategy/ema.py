@@ -64,10 +64,10 @@ class EMAStrategy(Strategy):
             close[-1], ema_fast[-1], ema_slow[-1], self.first_cross))
 
         if self.pending:
-            order_status = self.api.order_status('EMA')
+            self.pending = self.api.order_status('EMA', self.pending.direction)
 
             # Buy order
-            if order_status == self.api.CONFIRMED:
+            if self.pending == self.api.CONFIRMED:
                 if self.pending.direction == self.api.BUY:
                     self.current = self.pending
                     self.pending = None
