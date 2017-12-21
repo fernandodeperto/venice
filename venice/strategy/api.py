@@ -1,4 +1,3 @@
-from collections import namedtuple
 from decimal import Decimal
 from logging import getLogger
 
@@ -8,9 +7,6 @@ from ..api.api import ExchangeAPI
 
 class StrategyAPIError(Exception):
     pass
-
-
-StrategyOrder = namedtuple('StrategyOrder', 'buy_order, sell_order')
 
 
 class StrategyAPI:
@@ -27,8 +23,6 @@ class StrategyAPI:
     PENDING = ExchangeAPI.PENDING
     CONFIRMED = ExchangeAPI.CONFIRMED
     CANCELED = ExchangeAPI.CANCELED
-
-    OHLC_DEFAULT_LIMIT = 100
 
     def __init__(self, api, pair, period, capital):
         self.api = api
@@ -67,12 +61,10 @@ class StrategyAPI:
         return [x.high for x in self.ohlc(limit=limit)]
 
     def hl2(self, limit=10):
-        """Shortcut for (high + low)/2."""
         ohlc = self.api.ohlc(self.pair, self.period, limit=limit)
         return [(x.high + x.low)/2 for x in ohlc]
 
     def hlc3(self, limit=10):
-        """Shortcut for (high + low + close)/3."""
         ohlc = self.api.ohlc(self.pair, self.period, limit=limit)
         return [(x.high + x.low + x.close)/3 for x in ohlc]
 
@@ -80,18 +72,12 @@ class StrategyAPI:
         return [x.low for x in self.ohlc(limit=limit)]
 
     def ohl4(self, limit=10):
-        """Shortcut for (high + low + open + close)/4."""
         ohlc = self.api.ohlc(self.pair, self.period, limit=limit)
         return [(x.high + x.low + x.open_ + x.close)/4 for x in ohlc]
 
     def ohlc(self, limit=10):
-        """Ticker information."""
-        if limit > self.OHLC_DEFAULT_LIMIT:
-            raise StrategyAPIError('limit {} exceeds maximum {}'.format(
-                limit, self.OHLC_DEFAULT_LIMIT))
-
-        if not self._ohlc:
-            self._ohlc = self.api.ohlc(self.pair, self.period, limit=self.OHLC_DEFAULT_LIMIT)
+        if not self._ohlc or len(self._ohlc) < limit:
+            self._ohlc = self.api.ohlc(self.pair, self.period, limit=limit)
 
         return self._ohlc[-limit:]
 
@@ -119,9 +105,15 @@ class StrategyAPI:
     # TODO
     @property
     def balance(self):
-        used_balance = sum([x.cost for x in list(self.pending_orders.values()) +
-                            list(self.buy_orders.values())])
-        return self._balance - used_balance, self._balance
+        used_balance = 0
+
+        for name, orders in self.orders:
+            # caso 1 : order de compra pendente
+            # caso 2 : order de compra confirmada e ordem de venda pendente
+
+        # used_balance = sum([x.cost for x in list(self.pending_orders.values()) +
+        #                     list(self.buy_orders.values())])
+        # return self._balance - used_balance, self._balance
 
     # TODO
     def volume_max(self, type_):
@@ -169,32 +161,42 @@ class StrategyAPI:
 
     # Orders
 
-    # TODO
     def cancel(self, name):
         """Command to cancel/deactivate pending orders by referencing their names."""
         logger = getLogger(__name__)
 
-        if name not in self.pending_orders:
-            raise StrategyAPIError('pending order {} not found'.format(name))
+        if name in self.orders:
+            if (self.BUY in self.orders[name] and
+                    self.orders[name][self.BUY].status == self.PENDING):
+                self._cancel(self.orders[name][self.BUY])
 
-        self._cancel_order(self.pending_orders[name])
+            elif (self.SELL in self.orders[name] and
+                    self.orders[name][self.SELL].status == self.PENDING):
+                self._cancel(self.orers[name][self.SELL])
+
+            else:
+                raise StrategyAPIError('pending order {} not found'.format(name))
+
+        else:
+            StrategyAPIError('order {} not found'.format(name))
 
         logger.debug('cancel order {}: {}'.format(name, self.pending_orders[name]))
 
-    # TODO
     def cancel_all(self):
         """Command to cancel all pending orders."""
-        for name in list(self.pending_orders.keys()):
-            self.cancel(name)
+        for name in self.orders:
+            try:
+                self.cancel(name)
 
-    # TODO
+            except StrategyAPIError:
+                pass
+
     def order_buy(self, name, type_, volume=0, price=0, price2=0):
         """Place a buy order."""
-        if name in self.buy_orders:
-            raise StrategyAPIError('buy order {} already exists'.format(name))
-
-        if name in self.sell_orders:
-            del self.sell_orders[name]
+        if (name in self.orders and self.BUY in self.orders[name] and
+                self.orders[name][self.BUY].status != self.CANCELED):
+            raise StrategyAPIError('buy order {} already exists: {}'.format(
+                name, self.orders[name][self.BUY]))
 
         volume_max = self.volume_max(type_)
 
@@ -207,104 +209,78 @@ class StrategyAPI:
 
         return self._order(name, 'buy', type_, volume, price=price, price2=price2)
 
-    # TODO
     def order_sell(self, name, type_, price=0, price2=0):
         """Command to place a sell order."""
-        if name not in self.buy_orders:
+        if (name not in self.orders or self.BUY not in self.orders[name] or
+                self.orders[name][self.BUY].status != self.CONFIRMED):
             raise StrategyAPIError('buy order {} not found'.format(name))
 
-        volume = self.buy_orders[name].volume
+        elif (name in self.orders and self.SELL in self.orders[name] and
+              self.orders[name][self.SELL].status != self.CANCELED):
+            raise StrategyAPIError('sell order {} already exists: {}'.format(
+                name, self.orders[name][self.SELL]))
+
+        volume = self.orders[name][self.BUY].volume
 
         return self._order(name, 'sell', type_, volume, price=price, price2=price2)
 
-    # TODO
-    def order_status(self, name):
-        if name in self.pending_orders:
-            return self.PENDING
-
-        if name in self.buy_orders or name in self.sell_orders:
-            return self.CONFIRMED
-
-        if name in self.canceled_orders:
-            return self.CANCELED
+    def order_status(self, name, direction):
+        if name in self.orders and direction in self.orders[name]:
+            return self.orders[name][direction]
 
         return self.NOT_FOUND
 
-    # TODO
     def update(self):
         logger = getLogger(__name__)
 
-        pending_orders = {}
+        for name, orders in self.orders:
+            for direction, order_status in orders:
+                if order_status.status == self.PENDING:
+                    self._update_order(order_status)
 
-        for name in self.pending_orders:
-            try:
-                order_status = self._update_order(self.pending_orders[name])
+                    if order_status.status == self.CONFIRMED:
+                        maker_fee, taker_fee = self.api.fees()
+                        order_fee = (order_status.cost * (maker_fee if order_status.type_ ==
+                                                          self.LIMIT else taker_fee))
+                        self._balance -= order_fee
 
-            except Exception:
-                pending_orders[name] = self.pending_orders[name]
-                raise
+                        logger.debug('order fee={:.5f}, balance={:.5f}'.format(
+                            order_fee, self._balance))
 
-            if order_status.status == self.PENDING:
-                pending_orders[name] = order_status
+                        if order_status.direction == self.BUY:
+                            logger.info('buy order confirmed, name={}, buy={:.5f}'.format(
+                                name, order_status.avg_price))
 
-            elif order_status.status == self.CONFIRMED:
-                if order_status.direction == self.BUY:
-                    if name in self.buy_orders:
-                        raise StrategyAPIError('buy order {} already exists'.format(name))
+                        else:  # Sell order
+                            buy_order = orders[self.BUY]
 
-                    self.buy_orders[name] = order_status
+                            self._balance += order_status.cost - buy_order.cost
 
-                    logger.info('buy order confirmed, name={}, buy={:.5f}'.format(
-                        name, order_status.avg_price))
+                            logger.info(
+                                'trade confirmed, name={}, buy={:.5f}, sell={:.5f}, profit={:.5f},'
+                                ' balance={:.5f}'.format(
+                                    name, buy_order.avg_price, order_status.avg_price,
+                                    order_status.cost - buy_order.cost, self._balance))
 
-                else:  # Sell order
-                    if name not in self.buy_orders:
-                        raise StrategyAPIError('buy order {} not found'.format(name))
+                    self.orders[name][direction] = order_status
 
-                    self._balance += order_status.cost - self.buy_orders[name].cost
+                logger.debug('order {}: {}'.format(
+                    name, order_status))
 
-                    logger.info(
-                        'trade confirmed, name={}, buy={:.5f}, sell={:.5f}, profit={:.5f},'
-                        ' balance={:.5f}'.format(
-                            name, self.buy_orders[name].avg_price, order_status.avg_price,
-                            order_status.cost - self.buy_orders[name].cost, self._balance))
-
-                    self.sell_orders[name] = order_status
-                    del self.buy_orders[name]
-
-                maker_fee, taker_fee = self.api.fees()
-                order_fee = (order_status.cost *
-                             (maker_fee if order_status.type_ == self.LIMIT else taker_fee))
-                self._balance -= order_fee
-
-                logger.debug('order fee={:.5f}, balance={:.5f}'.format(order_fee, self._balance))
-
-            elif order_status.status == self.CANCELED:
-                self.canceled_orders[name] = order_status
-
-            logger.debug('order {} {}: {}'.format(
-                name, order_status.status, order_status))
-
-        self.pending_orders = pending_orders
         self._ohlc = None
         self._ticker = None
 
-    # TODO
     def clean_up(self):
-        for name in list(self.pending_orders.keys()):
-            self.cancel(name)
+        for order in self._filter_orders(status=self.PENDING):
+            self._cancel_order(order)
 
-        for name in list(self.buy_orders.keys()):
-            self.order_sell(name, self.MARKET)
+        for order in self._filter_orders(direction=self.BUY, status=self.CONFIRMED):
+            self._add_order(self.pair, self.SELL, self.MARKET, volume=order.volume)
 
     # Internal methods
 
-    # TODO
     def _order(self, name, direction, type_, volume, price=0, price2=0):
         logger = getLogger(__name__)
-
-        if name in self.pending_orders:
-            self.cancel(name)
 
         order_statuses = self._add_order(
             self.pair, direction, type_, volume=volume, price=price, price2=price2)
@@ -312,11 +288,22 @@ class StrategyAPI:
         if len(order_statuses) > 1:
             raise StrategyAPIError('orders with multiple order statuses not supported')
 
-        self.pending_orders[name] = order_statuses[0]
+        self.orders[name][direction] = order_statuses[0]
 
-        logger.debug('new {} order {}: {}'.format(direction, name, self.pending_orders[name]))
+        logger.debug('new {} order {}: {}'.format(direction, name, order_statuses[0]))
 
-        return self.pending_orders[name]
+        return order_statuses[0]
+
+    def _filter_orders(self, direction=None, status=None):
+        filtered_orders = []
+
+        for name, orders in self.orders:
+            for direction, order_status in orders:
+                if ((not direction or order_status.direction == direction) and
+                        (not status or order_status.status == status)):
+                    filtered_orders.append(order_status)
+
+        return filtered_orders
 
     # Parent internal methods
 
