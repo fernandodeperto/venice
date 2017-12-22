@@ -174,7 +174,7 @@ class StrategyAPI:
 
             elif (self.SELL in self.orders[name] and
                     self.orders[name][self.SELL].status == self.PENDING):
-                self._cancel_order(self.orers[name][self.SELL])
+                self._cancel_order(self.orders[name][self.SELL])
                 logger.debug('cancel order {}: {}'.format(name, self.orders[name][self.SELL]))
 
             else:
@@ -182,7 +182,6 @@ class StrategyAPI:
 
         else:
             StrategyAPIError('order {} not found'.format(name))
-
 
     def cancel_all(self):
         """Command to cancel all pending orders."""
