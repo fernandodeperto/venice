@@ -83,8 +83,12 @@ class EMAStrategy(Strategy):
             else:
                 self.pending = self.api.order_buy('EMA', self.api.STOP, price=high[-1])
 
-        elif ema_fast[-1] - ema_slow[-1] < -self.epsilon and self.current and not self.pending:
-            self.pending = self.api.order_sell('EMA', self.api.STOP, price=low[-1])
+        elif ema_fast[-1] - ema_slow[-1] < -self.epsilon:
+                if not self.current and self.pending:
+                    self.api.cancel()
+
+                elif self.current and not self.pending:
+                    self.pending = self.api.order_sell('EMA', self.api.STOP, price=low[-1])
 
         logger.debug('current={}, pending={}'.format(self.current, self.pending))
 
