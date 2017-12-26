@@ -66,15 +66,17 @@ class EMAStrategy(Strategy):
         if self.pending:
             self.pending = self.api.order_status('EMA', self.pending.direction)
 
-            # Buy order
-            if self.pending == self.api.CONFIRMED:
-                if self.pending.direction == self.api.BUY:
+            if self.pending.status == self.api.CONFIRMED:
+                if not self.current:
                     self.current = self.pending
                     self.pending = None
 
                 else:
                     self.current = None
                     self.pending = None
+
+            elif self.pending.status == self.api.CANCELED:
+                self.pending = None
 
         if ema_fast[-1] - ema_slow[-1] > self.epsilon and not self.current and not self.pending:
             if self.cross and not self.first_cross:
@@ -84,7 +86,8 @@ class EMAStrategy(Strategy):
                 self.pending = self.api.order_buy('EMA', self.api.STOP, price=high[-1])
 
         elif ema_fast[-1] - ema_slow[-1] < -self.epsilon:
-                if not self.current and self.pending:
+                # Buy order pending
+                if self.pending and not self.current:
                     self.api.cancel()
 
                 elif self.current and not self.pending:

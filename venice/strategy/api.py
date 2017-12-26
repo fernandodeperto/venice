@@ -277,6 +277,7 @@ class StrategyAPI:
         self._ohlc = None
         self._ticker = None
 
+    # TODO Check if this is working correctly
     def clean_up(self):
         for order in self._filter_orders(status=self.PENDING):
             self._cancel_order(order)
