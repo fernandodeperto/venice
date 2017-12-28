@@ -1,6 +1,7 @@
 import sys
 
 from decimal import Decimal
+# from logging import getLogger
 
 
 def sma(source, length):
@@ -19,12 +20,23 @@ def ema(source, length):
 
 
 def macd(fast_length, slow_length, source, signal_length):
+    # logger = getLogger(__name__)
+
     fast_ema = ema(source, fast_length)
     slow_ema = ema(source, slow_length)
 
-    macd_ = [fast_ema[i] - slow_ema[i] for i in range(0, len(fast_ema))]
+    fast_ema = fast_ema[len(fast_ema) - len(slow_ema):]
+
+    macd_ = [fast_ema[i] - slow_ema[i] for i in range(0, len(slow_ema))]
     signal = ema(macd_, signal_length)
-    histogram = [macd_[i] - signal[i] for i in range(0, len(macd_))]
+
+    macd_ = macd_[len(macd_) - len(signal):]
+
+    histogram = [macd_[i] - signal[i] for i in range(0, len(signal))]
+
+    # logger.debug('fast_ema={:.5f}, slow_ema={:.5f}, macd={:.5f}, signal={:.5f}, '
+    #              'hist={:.5f}'.format(fast_ema[-1], slow_ema[-1], macd_[-1], signal[-1],
+    #                                   histogram[-1]))
 
     return macd_, signal, histogram
 
